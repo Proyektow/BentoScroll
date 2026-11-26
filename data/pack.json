@@ -1,0 +1,45 @@
+[
+  {
+    "id": "c1",
+    "type": "spark",
+    "category": "Física · Espacio",
+    "title": "El GPS necesita la relatividad de Einstein para no fallar por 11 km",
+    "text": "Los satélites GPS orbitan rápido y con menor gravedad que en la Tierra. Eso hace que sus relojes atómicos adelanten 38 microsegundos cada día respecto a los nuestros.",
+    "deep": "Sin corregir ese desfase relativista en el software del receptor, el error acumulado de posición crecería unos 11 kilómetros diarios."
+  },
+  {
+    "id": "c2",
+    "type": "game",
+    "category": "Enfoque · Memoria",
+    "title": "Matriz Espacial 4×4",
+    "gameType": "memory"
+  },
+  {
+    "id": "c3",
+    "type": "trivia",
+    "category": "Hardware · Datos",
+    "title": "¿Qué pesa físicamente más en una báscula de precisión?",
+    "options": [
+      "Un Kindle lleno con 3.000 libros",
+      "El mismo Kindle totalmente vacío",
+      "Pesan exactamente lo mismo"
+    ],
+    "answer": 0,
+    "deep": "Al escribir datos en memoria flash se atrapan electrones en un estado de mayor energía. Por E=mc², esa energía extra añade unos 10^-18 gramos."
+  },
+  {
+    "id": "c4",
+    "type": "spark",
+    "category": "Psicología · Hábitos",
+    "title": "El Efecto Zeigarnik: por qué las tareas a medias no te dejan desconectar",
+    "text": "El cerebro mantiene activa una tensión cognitiva sobre cualquier proceso iniciado e interrumpido, pero la libera en cuanto anotas el siguiente paso concreto.",
+    "deep": "Apuntar en papel qué harás exactamente mañana a primera hora cierra el bucle abierto en la memoria de trabajo y reduce la rumiación."
+  },
+  {
+    "id": "c5",
+    "type": "game",
+    "category": "Percepción · Tiempo",
+    "title": "Cronómetro Ciego",
+    "gameType": "chrono"
+  }
+]
