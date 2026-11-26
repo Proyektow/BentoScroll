@@ -1,17 +1,18 @@
 {
-  "name": "BentoScroll — Tech & IA",
+  "name": "BENTOSCROLL — Suite Local",
   "short_name": "BentoScroll",
-  "description": "Píldoras offline de tecnología, IA y retos mentales con diseño Bento.",
+  "description": "Suite local-first: feed tech/IA, mapa de niebla, escáner óptico, lab táctil y bóveda privada.",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#f4f6f9",
-  "theme_color": "#f4f6f9",
+  "background_color": "#f4f4f2",
+  "theme_color": "#f4f4f2",
   "orientation": "portrait",
   "icons": [
     {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%23ffffff'/><rect x='18' y='18' width='28' height='28' rx='7' fill='%232563eb'/><rect x='54' y='18' width='28' height='64' rx='7' fill='%23f97316'/><rect x='18' y='54' width='28' height='28' rx='7' fill='%230f172a'/></svg>",
-      "sizes": "512x512",
-      "type": "image/svg+xml"
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
     }
   ]
 }
