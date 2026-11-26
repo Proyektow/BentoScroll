@@ -1,23 +1,78 @@
 [
   {
-    "id": "c1",
+    "id": "t1",
     "type": "spark",
-    "category": "Física · Espacio",
-    "title": "El GPS necesita la relatividad de Einstein para no fallar por 11 km",
-    "text": "Los satélites GPS orbitan rápido y con menor gravedad que en la Tierra. Eso hace que sus relojes atómicos adelanten 38 microsegundos cada día respecto a los nuestros.",
-    "deep": "Sin corregir ese desfase relativista en el software del receptor, el error acumulado de posición crecería unos 11 kilómetros diarios."
+    "category": "Inteligencia Artificial",
+    "title": "Por qué los LLMs no saben cuántas 'R' tiene la palabra Strawberry",
+    "text": "Los modelos de lenguaje no leen letras sueltas, sino fragmentos numéricos llamados tokens. Para el tokenizador, 'strawberry' suele dividirse en bloques como 'str', 'aw' y 'berry'.",
+    "highlight": "El modelo ve IDs numéricos en un espacio vectorial, no caracteres individuales.",
+    "deep": "Al entrenarse prediciendo el siguiente token probable en lugar de inspeccionar cadenas de caracteres, contar letras requiere razonamiento paso a paso o herramientas externas."
   },
   {
-    "id": "c2",
+    "id": "g1",
     "type": "game",
-    "category": "Enfoque · Memoria",
-    "title": "Matriz Espacial 4×4",
+    "category": "Reto · Memoria",
+    "title": "Matriz Neural 4×4",
     "gameType": "memory"
   },
   {
-    "id": "c3",
+    "id": "t2",
+    "type": "spark",
+    "category": "IA Local · Hardware",
+    "title": "Cómo cabe un modelo de 7.000 millones de parámetros en un móvil",
+    "text": "El secreto es la cuantización: reducir la precisión de cada peso neuronal de 16 bits (FP16) a solo 4 bits (INT4), recortando el consumo de RAM en un 75%.",
+    "highlight": "Es como redondear un número con 8 decimales a solo 1 decimal sin perder la esencia del cálculo.",
+    "deep": "Formatos como GGUF o AWQ agrupan pesos en bloques y conservan alta precisión solo en las capas más sensibles a errores."
+  },
+  {
+    "id": "t3",
     "type": "trivia",
-    "category": "Hardware · Datos",
+    "category": "Ciberseguridad",
+    "title": "¿Qué contraseña tarda más en romperse por fuerza bruta hoy en día?",
+    "options": [
+      "P@ssw0rd!26 (11 caracteres complejos)",
+      "cafe-ladrillo-nube-piano (24 letras minúsculas)",
+      "Tardan exactamente lo mismo"
+    ],
+    "answer": 1,
+    "deep": "La longitud vence a la complejidad: 4 palabras aleatorias tienen mucha más entropía matemática que una palabra corta con símbolos predecibles."
+  },
+  {
+    "id": "g2",
+    "type": "game",
+    "category": "Reto · Binario",
+    "title": "Byte Builder 5-Bit",
+    "gameType": "binary"
+  },
+  {
+    "id": "t4",
+    "type": "spark",
+    "category": "Arquitectura IA",
+    "title": "Por qué un LLM consume mucha más energía al generar que al leer",
+    "text": "Procesar tu prompt ocurre en paralelo de una sola pasada (prefill), pero generar la respuesta obliga a leer toda la memoria del modelo token a token.",
+    "highlight": "Cada palabra nueva que escribe la IA requiere mover gigabytes de pesos desde la VRAM.",
+    "deep": "Este cuello de botella se llama 'memory-bandwidth bound': en inferencia local importa más la velocidad de la memoria RAM que la potencia bruta del chip."
+  },
+  {
+    "id": "g3",
+    "type": "game",
+    "category": "Reto · Reflejos",
+    "title": "Ping de Latencia Humana",
+    "gameType": "latency"
+  },
+  {
+    "id": "t5",
+    "type": "spark",
+    "category": "Semiconductores",
+    "title": "Litografía EUV: disparar láseres a gotas de estaño 50.000 veces por segundo",
+    "text": "Para grabar transistores de 2 nanómetros, las máquinas de ASML vaporizan gotas microscópicas de estaño fundido con un láser de CO₂ para generar luz ultravioleta extrema.",
+    "highlight": "Esa luz es tan energética que hasta el aire la absorbe: todo el proceso ocurre en vacío absoluto.",
+    "deep": "Los espejos que dirigen ese haz son las superficies más planas jamás fabricadas por el ser humano."
+  },
+  {
+    "id": "t6",
+    "type": "trivia",
+    "category": "Hardware · Física",
     "title": "¿Qué pesa físicamente más en una báscula de precisión?",
     "options": [
       "Un Kindle lleno con 3.000 libros",
@@ -28,18 +83,28 @@
     "deep": "Al escribir datos en memoria flash se atrapan electrones en un estado de mayor energía. Por E=mc², esa energía extra añade unos 10^-18 gramos."
   },
   {
-    "id": "c4",
-    "type": "spark",
-    "category": "Psicología · Hábitos",
-    "title": "El Efecto Zeigarnik: por qué las tareas a medias no te dejan desconectar",
-    "text": "El cerebro mantiene activa una tensión cognitiva sobre cualquier proceso iniciado e interrumpido, pero la libera en cuanto anotas el siguiente paso concreto.",
-    "deep": "Apuntar en papel qué harás exactamente mañana a primera hora cierra el bucle abierto en la memoria de trabajo y reduce la rumiación."
+    "id": "g4",
+    "type": "game",
+    "category": "Reto · Precisión",
+    "title": "Reloj Interno del Sistema",
+    "gameType": "chrono"
   },
   {
-    "id": "c5",
-    "type": "game",
-    "category": "Percepción · Tiempo",
-    "title": "Cronómetro Ciego",
-    "gameType": "chrono"
+    "id": "t7",
+    "type": "spark",
+    "category": "Agentes IA",
+    "title": "El patrón ReAct: cómo una IA pasa de charlar a ejecutar tareas reales",
+    "text": "En lugar de responder de golpe, el agente entra en un bucle de Pensar → Actuar (llamar a una API o herramienta) → Observar el resultado antes de contestarte.",
+    "highlight": "Sin herramientas externas, un LLM es un cerebro aislado; con ReAct, gana manos.",
+    "deep": "Este ciclo permite que un agente consulte una base de datos local, detecte un error de código y lo corrija solo antes de mostrar la salida final."
+  },
+  {
+    "id": "t8",
+    "type": "spark",
+    "category": "Redes · Protocolos",
+    "title": "Cómo funciona WebRTC para conectar dos dispositivos sin servidor intermedio",
+    "text": "Mediante un proceso llamado ICE/STUN, dos navegadores descubren sus direcciones IP y abren un túnel cifrado directo punto a punto (P2P).",
+    "highlight": "Una vez establecido el enlace, los archivos o el audio viajan directo entre tus dispositivos.",
+    "deep": "Es la base de herramientas locales tipo Snapdrop y permite latencias mínimas en red local sin gastar ancho de banda en la nube."
   }
 ]
