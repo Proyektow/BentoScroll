@@ -1,5 +1,5 @@
 const DB_NAME = 'BentoScrollMacroDB';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 export function openDB() {
   return new Promise((resolve, reject) => {
@@ -15,13 +15,15 @@ export function openDB() {
       if (!db.objectStoreNames.contains('fog_points')) {
         db.createObjectStore('fog_points', { keyPath: 'id' });
       }
+      if (!db.objectStoreNames.contains('dynamic_cards')) {
+        db.createObjectStore('dynamic_cards', { keyPath: 'id' });
+      }
     };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
   });
 }
 
-/* --- Estado de Píldoras --- */
 export async function getCardState(id) {
   const db = await openDB();
   return new Promise((resolve) => {
@@ -51,7 +53,6 @@ export async function getAllStates() {
   });
 }
 
-/* --- Capturas Privadas --- */
 export async function saveCapture(captureObj) {
   const db = await openDB();
   return new Promise((resolve) => {
@@ -83,7 +84,6 @@ export async function deleteCapture(id) {
   });
 }
 
-/* --- Puntos de Niebla Despejados --- */
 export async function addFogPoint(pt) {
   const db = await openDB();
   return new Promise((resolve) => {
@@ -98,6 +98,26 @@ export async function getAllFogPoints() {
   return new Promise((resolve) => {
     const tx = db.transaction('fog_points', 'readonly');
     const req = tx.objectStore('fog_points').getAll();
+    req.onsuccess = () => resolve(req.result || []);
+  });
+}
+
+/* --- Tarjetas descargadas automáticamente cuando hay conexión --- */
+export async function saveDynamicCards(cards) {
+  const db = await openDB();
+  return new Promise((resolve) => {
+    const tx = db.transaction('dynamic_cards', 'readwrite');
+    const store = tx.objectStore('dynamic_cards');
+    cards.forEach((c) => store.put(c));
+    tx.oncomplete = () => resolve();
+  });
+}
+
+export async function getDynamicCards() {
+  const db = await openDB();
+  return new Promise((resolve) => {
+    const tx = db.transaction('dynamic_cards', 'readonly');
+    const req = tx.objectStore('dynamic_cards').getAll();
     req.onsuccess = () => resolve(req.result || []);
   });
 }
