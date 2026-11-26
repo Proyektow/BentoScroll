@@ -16,10 +16,8 @@ let centerCoords = { lat: 43.2630, lng: -2.9350 };
 let latestCoords = null;
 let zoom = 15;
 let renderedPins = [];
-
 const tileCache = new Map();
 
-// Variables para arrastrar el mapa con el dedo
 let isDragging = false;
 let dragStart = { x: 0, y: 0 };
 
@@ -75,7 +73,6 @@ function getTileImage(tx, ty, z) {
 
   const img = new Image();
   img.crossOrigin = 'anonymous';
-  // OpenStreetMap estándar: 0 API keys, libre y cacheable
   img.src = `https://tile.openstreetmap.org/${z}/${tx}/${ty}.png`;
   img.onload = () => drawScene();
   tileCache.set(key, img);
@@ -89,7 +86,6 @@ function drawScene() {
   ctx.fillStyle = '#f4f4f2';
   ctx.fillRect(0, 0, w, h);
 
-  // 1. Dibujar mapa de OpenStreetMap en escala de grises estilo BentoKit
   const cTile = latLngToTile(centerCoords.lat, centerCoords.lng, zoom);
   const baseTx = Math.floor(cTile.x);
   const baseTy = Math.floor(cTile.y);
@@ -112,7 +108,6 @@ function drawScene() {
   }
   ctx.restore();
 
-  // 2. Capa de Niebla sobre la ciudad
   const fogLayer = document.createElement('canvas');
   fogLayer.width = w;
   fogLayer.height = h;
@@ -137,7 +132,6 @@ function drawScene() {
 
   ctx.drawImage(fogLayer, 0, 0);
 
-  // 3. Pins de Capturas de la Bóveda
   renderedPins = [];
   captures.forEach((cap) => {
     if (!cap.coords) return;
@@ -151,7 +145,6 @@ function drawScene() {
     ctx.strokeRect(p.x - 7, p.y - 7, 14, 14);
   });
 
-  // 4. Posición actual
   if (points.length > 0) {
     const last = points[points.length - 1];
     const cur = project(last.lat, last.lng);
@@ -185,7 +178,6 @@ async function recordPosition(lat, lng) {
   drawScene();
 }
 
-/* Arrastrar mapa con el dedo */
 canvas.addEventListener('pointerdown', (e) => {
   isDragging = true;
   dragStart = { x: e.clientX, y: e.clientY };
@@ -243,9 +235,8 @@ zoomOutBtn.addEventListener('click', () => {
 });
 
 centerBtn.addEventListener('click', () => {
-  if (latestCoords) {
-    centerCoords = { ...latestCoords };
-  } else if (points.length > 0) {
+  if (latestCoords) centerCoords = { ...latestCoords };
+  else if (points.length > 0) {
     const last = points[points.length - 1];
     centerCoords = { lat: last.lat, lng: last.lng };
   }
