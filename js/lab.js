@@ -5,20 +5,20 @@ const modeBtn = document.getElementById('btn-lab-mode');
 const clearBtn = document.getElementById('btn-lab-clear');
 
 let rafId = null;
-let mode = 'particles'; // 'particles' | 'sound'
+let mode = 'particles';
 let attract = true;
 let pointer = { x: -999, y: -999, down: false };
-
 let particles = [];
 let ripples = [];
 let audioCtx = null;
 
-// Escala pentatónica armónica (Hz)
 const SCALE = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25, 587.33, 659.25];
 
 export function startLab() {
   stopLab();
-  resizeCanvas();
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width || 360;
+  canvas.height = rect.height || 420;
   if (particles.length === 0) initParticles();
   loop();
 }
@@ -28,30 +28,22 @@ export function stopLab() {
   rafId = null;
 }
 
-function resizeCanvas() {
-  const rect = canvas.parentElement.getBoundingClientRect();
-  canvas.width = rect.width || 360;
-  canvas.height = rect.height || 420;
-}
-
 function initParticles() {
   particles = [];
   for (let i = 0; i < 180; i++) {
     particles.push({
       x: Math.random() * canvas.width,
       y: Math.random() * canvas.height,
-      vx: (Math.random() - 0.5) * 1.5,
-      vy: (Math.random() - 0.5) * 1.5,
-      isOrange: i % 5 === 0,
-      size: i % 5 === 0 ? 3.5 : 2.3
+      vx: (Math.random() - 0.5) * 1.4,
+      vy: (Math.random() - 0.5) * 1.4,
+      isAccent: i % 6 === 0,
+      size: i % 6 === 0 ? 3.2 : 2.2
     });
   }
 }
 
 function playTone(normX, normY) {
-  if (!audioCtx) {
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  }
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   if (audioCtx.state === 'suspended') audioCtx.resume();
 
   const noteIdx = Math.min(SCALE.length - 1, Math.floor(normX * SCALE.length));
@@ -61,8 +53,7 @@ function playTone(normX, normY) {
   const gain = audioCtx.createGain();
   osc.type = 'sine';
   osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-
-  gain.gain.setValueAtTime(0.14, audioCtx.currentTime);
+  gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
   gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 1.2);
 
   osc.connect(gain);
@@ -77,14 +68,14 @@ function spawnRipple(x, y) {
     y,
     r: 6,
     alpha: 1,
-    color: ripples.length % 2 === 0 ? '#2563eb' : '#f97316'
+    color: ripples.length % 2 === 0 ? '#111111' : '#c0392b'
   });
   playTone(x / canvas.width, y / canvas.height);
 }
 
 function loop() {
   if (mode === 'particles') {
-    ctx.fillStyle = 'rgba(248, 250, 252, 0.24)';
+    ctx.fillStyle = 'rgba(244, 244, 242, 0.25)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     particles.forEach((p) => {
@@ -93,7 +84,7 @@ function loop() {
         const dy = pointer.y - p.y;
         const dist = Math.hypot(dx, dy) || 1;
         if (dist < 180) {
-          const force = ((180 - dist) / 180) * (attract ? 0.55 : -0.85);
+          const force = ((180 - dist) / 180) * (attract ? 0.5 : -0.8);
           p.vx += (dx / dist) * force;
           p.vy += (dy / dist) * force;
         }
@@ -111,15 +102,14 @@ function loop() {
 
       ctx.beginPath();
       ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-      ctx.fillStyle = p.isOrange ? '#f97316' : '#2563eb';
+      ctx.fillStyle = p.isAccent ? '#c0392b' : '#111111';
       ctx.fill();
     });
   } else {
-    ctx.fillStyle = '#0f172a';
+    ctx.fillStyle = '#f4f4f2';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Retícula geométrica sutil
-    ctx.strokeStyle = 'rgba(148, 163, 184, 0.08)';
+    ctx.strokeStyle = '#e5e5e0';
     ctx.lineWidth = 1;
     for (let x = 0; x < canvas.width; x += 32) {
       ctx.beginPath();
@@ -129,17 +119,16 @@ function loop() {
     }
 
     ripples.forEach((rp) => {
-      rp.r += 2.4;
+      rp.r += 2.3;
       rp.alpha *= 0.975;
 
       ctx.beginPath();
       ctx.arc(rp.x, rp.y, rp.r, 0, Math.PI * 2);
       ctx.strokeStyle = rp.color;
       ctx.globalAlpha = rp.alpha;
-      ctx.lineWidth = 2.5;
+      ctx.lineWidth = 2;
       ctx.stroke();
 
-      // Polígono armónico inscrito
       ctx.beginPath();
       for (let s = 0; s <= 6; s++) {
         const ang = (s / 6) * Math.PI * 2 + rp.r * 0.01;
@@ -161,10 +150,7 @@ function loop() {
 function getPos(e) {
   const rect = canvas.getBoundingClientRect();
   const touch = e.touches ? e.touches[0] : e;
-  return {
-    x: touch.clientX - rect.left,
-    y: touch.clientY - rect.top
-  };
+  return { x: touch.clientX - rect.left, y: touch.clientY - rect.top };
 }
 
 canvas.addEventListener('pointerdown', (e) => {
@@ -180,9 +166,7 @@ canvas.addEventListener('pointermove', (e) => {
   pointer.y = pos.y;
 });
 
-window.addEventListener('pointerup', () => {
-  pointer.down = false;
-});
+window.addEventListener('pointerup', () => (pointer.down = false));
 
 lTabs.forEach((tab) => {
   tab.addEventListener('click', () => {
@@ -195,7 +179,7 @@ lTabs.forEach((tab) => {
 
 modeBtn.addEventListener('click', () => {
   attract = !attract;
-  modeBtn.textContent = `Polaridad: ${attract ? 'Atracción' : 'Repulsión'}`;
+  modeBtn.textContent = `POLARIDAD: ${attract ? 'ATRACCIÓN' : 'REPULSIÓN'}`;
 });
 
 clearBtn.addEventListener('click', () => {
