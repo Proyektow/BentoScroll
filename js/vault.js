@@ -1,5 +1,13 @@
 import { getAllCaptures, deleteCapture, getAllStates, saveCapture, updateCardState, getAllFogPoints, addFogPoint } from './db.js';
 
+const lockScreen = document.getElementById('vault-lock-screen');
+const vaultContent = document.getElementById('vault-content');
+const lockTitle = document.getElementById('lock-title');
+const lockMsg = document.getElementById('lock-msg');
+const pinDots = document.querySelectorAll('#pin-dots span');
+const pinKeypad = document.getElementById('pin-keypad');
+const pinConfigBtn = document.getElementById('btn-vault-pin');
+
 const vaultGrid = document.getElementById('vault-grid');
 const vaultSummary = document.getElementById('vault-summary');
 const vTabs = document.querySelectorAll('.v-tab');
@@ -12,12 +20,40 @@ const modalClose = document.getElementById('modal-close');
 const modalDelete = document.getElementById('modal-delete');
 const modalShare = document.getElementById('modal-share');
 
+const PIN_KEY = 'bentoscroll_pin_hash';
+let isUnlocked = false;
+let pinMode = 'unlock'; // 'unlock' | 'setup'
+let enteredPin = '';
+
 let activeTab = 'captures';
 let selectedCapture = null;
 let cachedCards = [];
 
+async function hashPin(pin) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pin));
+  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+export function lockVault() {
+  if (localStorage.getItem(PIN_KEY)) {
+    isUnlocked = false;
+  }
+}
+
 export async function renderVault(allCards = []) {
   if (allCards.length) cachedCards = allCards;
+
+  const savedHash = localStorage.getItem(PIN_KEY);
+  pinConfigBtn.textContent = savedHash ? 'PIN ✓' : 'PIN';
+
+  if (savedHash && !isUnlocked) {
+    openPinScreen('unlock');
+    return;
+  }
+
+  lockScreen.classList.add('hidden');
+  vaultContent.classList.remove('hidden');
+
   const captures = await getAllCaptures();
   const states = await getAllStates();
   const savedIds = new Set(states.filter((s) => s.saved).map((s) => s.id));
@@ -44,7 +80,7 @@ export async function renderVault(allCards = []) {
   if (activeTab === 'captures') {
     vaultGrid.className = 'vault-grid captures-mode';
     if (captures.length === 0) {
-      vaultGrid.innerHTML = `<p class="empty-msg">SIN CAPTURAS AÚN.<br>LAS FOTOS DE BENTO ÓPTICA NUNCA VAN A TU GALERÍA.</p>`;
+      vaultGrid.innerHTML = `<p class="empty-msg">SIN CAPTURAS AÚN.<br>LAS FOTOS Y HUELLAS ACÚSTICAS NUNCA VAN A TU GALERÍA.</p>`;
       return;
     }
 
@@ -79,6 +115,61 @@ export async function renderVault(allCards = []) {
     });
   }
 }
+
+function openPinScreen(mode) {
+  pinMode = mode;
+  enteredPin = '';
+  updateDots();
+  lockTitle.textContent = mode === 'setup' ? 'CREAR PIN DE BÓVEDA' : 'BÓVEDA BLOQUEADA';
+  lockMsg.textContent = mode === 'setup' ? 'Elige 4 dígitos para proteger tu archivo' : 'Introduce tu PIN de 4 dígitos';
+  vaultContent.classList.add('hidden');
+  lockScreen.classList.remove('hidden');
+}
+
+function updateDots() {
+  pinDots.forEach((dot, i) => dot.classList.toggle('filled', i < enteredPin.length));
+}
+
+pinKeypad.addEventListener('click', async (e) => {
+  const btn = e.target.closest('button');
+  if (!btn) return;
+  const k = btn.dataset.k;
+
+  if (k === 'C') enteredPin = '';
+  else if (k === '⌫') enteredPin = enteredPin.slice(0, -1);
+  else if (enteredPin.length < 4) enteredPin += k;
+
+  updateDots();
+
+  if (enteredPin.length === 4) {
+    const hashed = await hashPin(enteredPin);
+    if (pinMode === 'setup') {
+      localStorage.setItem(PIN_KEY, hashed);
+      isUnlocked = true;
+      renderVault();
+    } else {
+      if (hashed === localStorage.getItem(PIN_KEY)) {
+        isUnlocked = true;
+        renderVault();
+      } else {
+        lockMsg.textContent = 'PIN INCORRECTO';
+        enteredPin = '';
+        setTimeout(updateDots, 250);
+      }
+    }
+  }
+});
+
+pinConfigBtn.addEventListener('click', () => {
+  if (localStorage.getItem(PIN_KEY)) {
+    if (confirm('¿Quieres desactivar el bloqueo por PIN de la Bóveda?')) {
+      localStorage.removeItem(PIN_KEY);
+      renderVault();
+    }
+  } else {
+    openPinScreen('setup');
+  }
+});
 
 async function exportBackup() {
   const payload = {
