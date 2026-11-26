@@ -269,3 +269,27 @@ shuffleBtn.addEventListener('click', () => {
 syncBtn.addEventListener('click', () => syncOnlinePills(false));
 
 init();
+// 1. Cambia el import de vault.js:
+import { renderVault, lockVault } from './vault.js';
+
+// 2. Añade el control de Modo Oscuro E-Ink:
+const themeBtn = document.getElementById('btn-theme');
+const savedTheme = localStorage.getItem('bentoscroll_theme');
+if (savedTheme === 'dark') {
+  document.body.classList.add('dark-eink');
+  themeBtn.textContent = '☀';
+}
+
+themeBtn.addEventListener('click', () => {
+  const isDark = document.body.classList.toggle('dark-eink');
+  localStorage.setItem('bentoscroll_theme', isDark ? 'dark' : 'light');
+  themeBtn.textContent = isDark ? '☀' : '☾';
+  document.querySelector('meta[name="theme-color"]').setAttribute('content', isDark ? '#111111' : '#f4f4f2');
+});
+
+// 3. En el evento de navItems.forEach, añade lockVault() al salir de la Bóveda:
+if (targetId === 'view-vault') {
+  renderVault(allCards);
+} else {
+  lockVault();
+}
