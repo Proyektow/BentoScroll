@@ -1,7 +1,7 @@
 import { getAllStates, updateCardState, getDynamicCards, saveDynamicCards } from './db.js';
 import { renderGame } from './games.js';
 import { startScanner, stopScanner } from './scanner.js';
-import { renderVault } from './vault.js';
+import { renderVault, lockVault } from './vault.js';
 import { startLab, stopLab } from './lab.js';
 import { renderFogMap } from './fog.js';
 
@@ -11,6 +11,7 @@ const statSeenEl = document.getElementById('stat-seen');
 const shuffleBtn = document.getElementById('btn-shuffle');
 const syncBtn = document.getElementById('btn-sync');
 const syncLabel = document.getElementById('sync-label');
+const themeBtn = document.getElementById('btn-theme');
 
 const navItems = document.querySelectorAll('.nav-item');
 const views = document.querySelectorAll('.view');
@@ -28,42 +29,103 @@ const WIKI_CATEGORIES = [
   { key: 'Algoritmos', label: 'ALGORITMOS · WIKI' }
 ];
 
+/* --- MODO OSCURO E-INK --- */
+if (themeBtn) {
+  const savedTheme = localStorage.getItem('bentoscroll_theme');
+  if (savedTheme === 'dark') {
+    document.body.classList.add('dark-eink');
+    themeBtn.textContent = '☀';
+  }
+
+  themeBtn.addEventListener('click', () => {
+    const isDark = document.body.classList.toggle('dark-eink');
+    localStorage.setItem('bentoscroll_theme', isDark ? 'dark' : 'light');
+    themeBtn.textContent = isDark ? '☀' : '☾';
+    const metaTheme = document.querySelector('meta[name="theme-color"]');
+    if (metaTheme) metaTheme.setAttribute('content', isDark ? '#111111' : '#f4f4f2');
+  });
+}
+
+/* --- NAVEGACIÓN INFERIOR (5 PESTAÑAS) --- */
+navItems.forEach((btn) => {
+  btn.addEventListener('click', () => {
+    const targetId = btn.dataset.target;
+    navItems.forEach((n) => n.classList.remove('active'));
+    btn.classList.add('active');
+    views.forEach((v) => v.classList.toggle('active', v.id === targetId));
+
+    if (targetId === 'view-scanner') startScanner();
+    else stopScanner();
+
+    if (targetId === 'view-lab') startLab();
+    else stopLab();
+
+    if (targetId === 'view-fog') renderFogMap();
+
+    if (targetId === 'view-vault') {
+      renderVault(allCards);
+    } else {
+      lockVault();
+    }
+  });
+});
+
+/* --- INICIALIZACIÓN --- */
 async function init() {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').catch(() => {});
   }
 
-  const res = await fetch('./data/pack.json');
-  baseCards = await res.json();
+  try {
+    const res = await fetch('./data/pack.json');
+    baseCards = await res.json();
+  } catch (err) {
+    baseCards = [
+      {
+        id: 'fallback_1',
+        type: 'spark',
+        category: 'SISTEMA · LOCAL',
+        title: 'BentoScroll activo en modo offline',
+        text: 'No se pudo cargar pack.json, pero la aplicación local está operativa.',
+        deep: 'Verifica que el archivo data/pack.json exista en el repositorio.'
+      }
+    ];
+  }
 
-  const states = await getAllStates();
-  states.forEach((s) => statesMap.set(s.id, s));
+  try {
+    const states = await getAllStates();
+    states.forEach((s) => statesMap.set(s.id, s));
+  } catch (e) {}
 
   await rebuildAllCards();
   updateHud();
   renderFeed();
 
   if (navigator.onLine) {
-    const dyn = await getDynamicCards();
+    const dyn = await getDynamicCards().catch(() => []);
     if (dyn.length < 5) syncOnlinePills(true);
   }
 }
 
 async function rebuildAllCards() {
-  const dynCards = await getDynamicCards();
-  allCards = [...baseCards, ...dynCards];
+  try {
+    const dynCards = await getDynamicCards();
+    allCards = [...baseCards, ...dynCards];
+  } catch (e) {
+    allCards = [...baseCards];
+  }
 }
 
 async function syncOnlinePills(silent = false) {
   if (!navigator.onLine) {
-    if (!silent) {
+    if (!silent && syncLabel) {
       syncLabel.textContent = 'SIN RED';
       setTimeout(() => (syncLabel.textContent = 'RED +'), 1500);
     }
     return;
   }
 
-  syncLabel.textContent = '...';
+  if (syncLabel) syncLabel.textContent = '...';
 
   try {
     const cat = WIKI_CATEGORIES[Math.floor(Math.random() * WIKI_CATEGORIES.length)];
@@ -98,44 +160,31 @@ async function syncOnlinePills(silent = false) {
       await saveDynamicCards(newCards);
       await rebuildAllCards();
       renderFeed(true);
-      syncLabel.textContent = silent ? 'RED +' : `+${newCards.length}`;
-      if (!silent) setTimeout(() => (syncLabel.textContent = 'RED +'), 1600);
-    } else {
+      if (syncLabel) {
+        syncLabel.textContent = silent ? 'RED +' : `+${newCards.length}`;
+        if (!silent) setTimeout(() => (syncLabel.textContent = 'RED +'), 1600);
+      }
+    } else if (syncLabel) {
       syncLabel.textContent = 'RED +';
     }
   } catch (err) {
-    syncLabel.textContent = 'ERROR';
-    setTimeout(() => (syncLabel.textContent = 'RED +'), 1500);
+    if (syncLabel) {
+      syncLabel.textContent = 'ERROR';
+      setTimeout(() => (syncLabel.textContent = 'RED +'), 1500);
+    }
   }
 }
-
-navItems.forEach((btn) => {
-  btn.addEventListener('click', () => {
-    const targetId = btn.dataset.target;
-    navItems.forEach((n) => n.classList.remove('active'));
-    btn.classList.add('active');
-    views.forEach((v) => v.classList.toggle('active', v.id === targetId));
-
-    if (targetId === 'view-scanner') startScanner();
-    else stopScanner();
-
-    if (targetId === 'view-lab') startLab();
-    else stopLab();
-
-    if (targetId === 'view-fog') renderFogMap();
-    if (targetId === 'view-vault') renderVault(allCards);
-  });
-});
 
 function updateHud() {
   let seen = 0;
   statesMap.forEach((s) => {
     if (s.seen) seen++;
   });
-  statSeenEl.textContent = `${seen} LEÍDAS · OFFLINE`;
+  if (statSeenEl) statSeenEl.textContent = `${seen} LEÍDAS · OFFLINE`;
 }
 
 function renderProgressSegments(count, activeIdx = 0) {
+  if (!progressTrackEl) return;
   progressTrackEl.innerHTML = '';
   const visibleCount = Math.min(count, 20);
   for (let i = 0; i < visibleCount; i++) {
@@ -149,6 +198,7 @@ function renderProgressSegments(count, activeIdx = 0) {
 }
 
 function renderFeed(shuffle = false) {
+  if (!feedEl) return;
   feedEl.innerHTML = '';
   let list = [...allCards];
 
@@ -261,35 +311,15 @@ function observeSlides() {
   document.querySelectorAll('.slide').forEach((s) => observer.observe(s));
 }
 
-shuffleBtn.addEventListener('click', () => {
-  feedEl.scrollTo({ top: 0, behavior: 'smooth' });
-  renderFeed(true);
-});
+if (shuffleBtn) {
+  shuffleBtn.addEventListener('click', () => {
+    feedEl.scrollTo({ top: 0, behavior: 'smooth' });
+    renderFeed(true);
+  });
+}
 
-syncBtn.addEventListener('click', () => syncOnlinePills(false));
+if (syncBtn) {
+  syncBtn.addEventListener('click', () => syncOnlinePills(false));
+}
 
 init();
-// 1. Cambia el import de vault.js:
-import { renderVault, lockVault } from './vault.js';
-
-// 2. Añade el control de Modo Oscuro E-Ink:
-const themeBtn = document.getElementById('btn-theme');
-const savedTheme = localStorage.getItem('bentoscroll_theme');
-if (savedTheme === 'dark') {
-  document.body.classList.add('dark-eink');
-  themeBtn.textContent = '☀';
-}
-
-themeBtn.addEventListener('click', () => {
-  const isDark = document.body.classList.toggle('dark-eink');
-  localStorage.setItem('bentoscroll_theme', isDark ? 'dark' : 'light');
-  themeBtn.textContent = isDark ? '☀' : '☾';
-  document.querySelector('meta[name="theme-color"]').setAttribute('content', isDark ? '#111111' : '#f4f4f2');
-});
-
-// 3. En el evento de navItems.forEach, añade lockVault() al salir de la Bóveda:
-if (targetId === 'view-vault') {
-  renderVault(allCards);
-} else {
-  lockVault();
-}
