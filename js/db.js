@@ -6,18 +6,10 @@ export function openDB() {
     const req = indexedDB.open(DB_NAME, DB_VERSION);
     req.onupgradeneeded = (e) => {
       const db = e.target.result;
-      if (!db.objectStoreNames.contains('state')) {
-        db.createObjectStore('state', { keyPath: 'id' });
-      }
-      if (!db.objectStoreNames.contains('captures')) {
-        db.createObjectStore('captures', { keyPath: 'id' });
-      }
-      if (!db.objectStoreNames.contains('fog_points')) {
-        db.createObjectStore('fog_points', { keyPath: 'id' });
-      }
-      if (!db.objectStoreNames.contains('dynamic_cards')) {
-        db.createObjectStore('dynamic_cards', { keyPath: 'id' });
-      }
+      if (!db.objectStoreNames.contains('state')) db.createObjectStore('state', { keyPath: 'id' });
+      if (!db.objectStoreNames.contains('captures')) db.createObjectStore('captures', { keyPath: 'id' });
+      if (!db.objectStoreNames.contains('fog_points')) db.createObjectStore('fog_points', { keyPath: 'id' });
+      if (!db.objectStoreNames.contains('dynamic_cards')) db.createObjectStore('dynamic_cards', { keyPath: 'id' });
     };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
@@ -102,7 +94,6 @@ export async function getAllFogPoints() {
   });
 }
 
-/* --- Tarjetas descargadas automáticamente cuando hay conexión --- */
 export async function saveDynamicCards(cards) {
   const db = await openDB();
   return new Promise((resolve) => {
