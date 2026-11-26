@@ -1,4 +1,4 @@
-import { getAllCaptures, deleteCapture, getAllStates } from './db.js';
+import { getAllCaptures, deleteCapture, getAllStates, saveCapture, updateCardState, getAllFogPoints, addFogPoint } from './db.js';
 
 const vaultGrid = document.getElementById('vault-grid');
 const vaultSummary = document.getElementById('vault-summary');
@@ -23,13 +23,28 @@ export async function renderVault(allCards = []) {
   const savedIds = new Set(states.filter((s) => s.saved).map((s) => s.id));
   const savedSparks = cachedCards.filter((c) => savedIds.has(c.id));
 
-  vaultSummary.textContent = `${captures.length} capturas · ${savedSparks.length} píldoras`;
+  vaultSummary.textContent = `${captures.length} CAPTURAS · ${savedSparks.length} PÍLDORAS`;
   vaultGrid.innerHTML = '';
+
+  const backupBar = document.createElement('div');
+  backupBar.className = 'backup-bar';
+  backupBar.innerHTML = `
+    <button id="btn-export-backup" class="action-btn">↓ EXPORTAR BACKUP</button>
+    <label class="action-btn" style="cursor:pointer">
+      ↑ IMPORTAR BACKUP
+      <input type="file" id="input-import-backup" accept=".json" style="display:none" />
+    </label>
+  `;
+  vaultGrid.parentElement.querySelector('.backup-bar')?.remove();
+  vaultGrid.before(backupBar);
+
+  backupBar.querySelector('#btn-export-backup').addEventListener('click', exportBackup);
+  backupBar.querySelector('#input-import-backup').addEventListener('change', importBackup);
 
   if (activeTab === 'captures') {
     vaultGrid.className = 'vault-grid captures-mode';
     if (captures.length === 0) {
-      vaultGrid.innerHTML = `<p class="empty-msg">Aún no has capturado nada con el Escáner.<br>Las fotos que hagas aquí nunca van a tu galería.</p>`;
+      vaultGrid.innerHTML = `<p class="empty-msg">SIN CAPTURAS AÚN.<br>LAS FOTOS DE BENTO ÓPTICA NUNCA VAN A TU GALERÍA.</p>`;
       return;
     }
 
@@ -48,7 +63,7 @@ export async function renderVault(allCards = []) {
   } else {
     vaultGrid.className = 'vault-grid sparks-mode';
     if (savedSparks.length === 0) {
-      vaultGrid.innerHTML = `<p class="empty-msg">No tienes píldoras guardadas desde el Feed.</p>`;
+      vaultGrid.innerHTML = `<p class="empty-msg">NO TIENES PÍLDORAS GUARDADAS DESDE EL FEED.</p>`;
       return;
     }
 
@@ -65,6 +80,37 @@ export async function renderVault(allCards = []) {
   }
 }
 
+async function exportBackup() {
+  const payload = {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    captures: await getAllCaptures(),
+    states: await getAllStates(),
+    fogPoints: await getAllFogPoints()
+  };
+  const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `bentoscroll-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+async function importBackup(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  try {
+    const data = JSON.parse(await file.text());
+    if (Array.isArray(data.captures)) for (const cap of data.captures) await saveCapture(cap);
+    if (Array.isArray(data.states)) for (const st of data.states) await updateCardState(st.id, st);
+    if (Array.isArray(data.fogPoints)) for (const pt of data.fogPoints) await addFogPoint(pt);
+    renderVault();
+  } catch (err) {
+    alert('Archivo de backup no válido.');
+  }
+}
+
 function openCaptureModal(cap) {
   selectedCapture = cap;
   modalImg.src = cap.image;
@@ -77,7 +123,7 @@ function openCaptureModal(cap) {
     hour: '2-digit',
     minute: '2-digit'
   });
-  modalMeta.textContent = `Modo: ${cap.filter.toUpperCase()} · ${dateStr} · Almacenado solo en BentoScroll`;
+  modalMeta.textContent = `MODO: ${cap.filter.toUpperCase()} · ${dateStr} · SOLO LOCAL`;
   modal.classList.remove('hidden');
 }
 
@@ -96,11 +142,10 @@ modalShare.addEventListener('click', async () => {
     const res = await fetch(selectedCapture.image);
     const blob = await res.blob();
     const file = new File([blob], `${selectedCapture.id}.webp`, { type: 'image/webp' });
-
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       await navigator.share({
         files: [file],
-        title: 'Captura BentoScroll',
+        title: 'BentoScroll',
         text: `Paleta: ${selectedCapture.palette.join(', ')}`
       });
     } else {
