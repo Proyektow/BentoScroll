@@ -20,13 +20,12 @@ let allCards = [];
 let currentList = [];
 let statesMap = new Map();
 
-// Categorías de Wikipedia ES para descargar píldoras automáticamente cuando hay conexión
 const WIKI_CATEGORIES = [
-  { key: 'Inteligencia_artificial', label: 'IA · Online' },
-  { key: 'Hardware', label: 'Hardware · Online' },
-  { key: 'Ciberseguridad', label: 'Seguridad · Online' },
-  { key: 'Robótica', label: 'Robótica · Online' },
-  { key: 'Algoritmos', label: 'Algoritmos · Online' }
+  { key: 'Inteligencia_artificial', label: 'IA · WIKI' },
+  { key: 'Hardware', label: 'HARDWARE · WIKI' },
+  { key: 'Ciberseguridad', label: 'SEGURIDAD · WIKI' },
+  { key: 'Robótica', label: 'ROBÓTICA · WIKI' },
+  { key: 'Algoritmos', label: 'ALGORITMOS · WIKI' }
 ];
 
 async function init() {
@@ -44,32 +43,27 @@ async function init() {
   updateHud();
   renderFeed();
 
-  // Si hay conexión y aún hay pocas tarjetas dinámicas, descarga automáticamente en segundo plano
   if (navigator.onLine) {
     const dyn = await getDynamicCards();
-    if (dyn.length < 5) {
-      syncOnlinePills(true);
-    }
+    if (dyn.length < 5) syncOnlinePills(true);
   }
 }
 
 async function rebuildAllCards() {
   const dynCards = await getDynamicCards();
-  // Intercala tarjetas descargadas con el pack base
   allCards = [...baseCards, ...dynCards];
 }
 
 async function syncOnlinePills(silent = false) {
   if (!navigator.onLine) {
     if (!silent) {
-      syncLabel.textContent = 'Sin red';
-      setTimeout(() => (syncLabel.textContent = 'Recargar'), 1500);
+      syncLabel.textContent = 'SIN RED';
+      setTimeout(() => (syncLabel.textContent = 'RED +'), 1500);
     }
     return;
   }
 
-  syncBtn.classList.add('loading');
-  syncLabel.textContent = 'Cargando...';
+  syncLabel.textContent = '...';
 
   try {
     const cat = WIKI_CATEGORIES[Math.floor(Math.random() * WIKI_CATEGORIES.length)];
@@ -96,7 +90,7 @@ async function syncOnlinePills(silent = false) {
         category: cat.label,
         title: p.title,
         text: shortText,
-        deep: deepText || 'Descargado automáticamente para lectura offline en BentoScroll.'
+        deep: deepText || 'Descargado automáticamente para lectura offline.'
       };
     });
 
@@ -104,30 +98,22 @@ async function syncOnlinePills(silent = false) {
       await saveDynamicCards(newCards);
       await rebuildAllCards();
       renderFeed(true);
-      if (!silent) {
-        syncLabel.textContent = `+${newCards.length} nuevas`;
-        setTimeout(() => (syncLabel.textContent = 'Recargar'), 1800);
-      } else {
-        syncLabel.textContent = 'Recargar';
-      }
+      syncLabel.textContent = silent ? 'RED +' : `+${newCards.length}`;
+      if (!silent) setTimeout(() => (syncLabel.textContent = 'RED +'), 1600);
     } else {
-      syncLabel.textContent = 'Recargar';
+      syncLabel.textContent = 'RED +';
     }
   } catch (err) {
-    syncLabel.textContent = 'Error';
-    setTimeout(() => (syncLabel.textContent = 'Recargar'), 1500);
-  } finally {
-    syncBtn.classList.remove('loading');
+    syncLabel.textContent = 'ERROR';
+    setTimeout(() => (syncLabel.textContent = 'RED +'), 1500);
   }
 }
 
-/* Navegación Inferior */
 navItems.forEach((btn) => {
   btn.addEventListener('click', () => {
     const targetId = btn.dataset.target;
     navItems.forEach((n) => n.classList.remove('active'));
     btn.classList.add('active');
-
     views.forEach((v) => v.classList.toggle('active', v.id === targetId));
 
     if (targetId === 'view-scanner') startScanner();
@@ -146,7 +132,7 @@ function updateHud() {
   statesMap.forEach((s) => {
     if (s.seen) seen++;
   });
-  statSeenEl.textContent = `${seen} leídas`;
+  statSeenEl.textContent = `${seen} LEÍDAS · OFFLINE`;
 }
 
 function renderProgressSegments(count, activeIdx = 0) {
@@ -179,7 +165,6 @@ function renderFeed(shuffle = false) {
   list.forEach((card, index) => {
     const st = statesMap.get(card.id) || { seen: false, saved: false };
     const isGame = card.type === 'game';
-    const tagClass = isGame ? 'game-tag' : card.isOnline ? 'online-tag' : '';
     const slide = document.createElement('section');
     slide.className = 'slide';
     slide.dataset.id = card.id;
@@ -188,8 +173,8 @@ function renderFeed(shuffle = false) {
     slide.innerHTML = `
       <article class="bento-card">
         <div class="bento-meta">
-          <span class="tag ${tagClass}">${card.category}</span>
-          <span class="time-pill">${isGame ? 'Reto' : '25 seg'}</span>
+          <span class="tag">${card.category}</span>
+          <span class="time-pill">${isGame ? 'RETO' : 'OFFLINE'}</span>
         </div>
         <div class="bento-body">
           <h2 class="bento-title">${card.title}</h2>
@@ -199,9 +184,9 @@ function renderFeed(shuffle = false) {
           ${card.deep ? `<div class="bento-deep">${card.deep}</div>` : ''}
         </div>
         <div class="bento-footer">
-          ${card.deep ? `<button class="action-btn blue-btn btn-deep">Dato técnico</button>` : ''}
+          ${card.deep ? `<button class="action-btn btn-deep">DATO TÉCNICO</button>` : ''}
           <button class="action-btn btn-save ${st.saved ? 'saved-state' : ''}">
-            ${st.saved ? '★ En Bóveda' : '☆ Guardar'}
+            ${st.saved ? '★ EN BÓVEDA' : '☆ GUARDAR'}
           </button>
         </div>
       </article>
@@ -219,9 +204,7 @@ function renderFeed(shuffle = false) {
         btn.addEventListener('click', () => {
           grid.querySelectorAll('.opt-btn').forEach((b) => (b.disabled = true));
           btn.classList.add(idx === card.answer ? 'correct' : 'wrong');
-          if (idx !== card.answer) {
-            grid.children[card.answer].classList.add('correct');
-          }
+          if (idx !== card.answer) grid.children[card.answer].classList.add('correct');
           slide.querySelector('.bento-deep')?.classList.add('open');
         });
         grid.appendChild(btn);
@@ -236,7 +219,7 @@ function renderFeed(shuffle = false) {
       deepBtn.addEventListener('click', () => {
         const box = slide.querySelector('.bento-deep');
         box.classList.toggle('open');
-        deepBtn.textContent = box.classList.contains('open') ? 'Ocultar' : 'Dato técnico';
+        deepBtn.textContent = box.classList.contains('open') ? 'OCULTAR' : 'DATO TÉCNICO';
       });
     }
 
@@ -246,7 +229,7 @@ function renderFeed(shuffle = false) {
       const updated = await updateCardState(card.id, { saved: !current });
       statesMap.set(card.id, updated);
       saveBtn.classList.toggle('saved-state', updated.saved);
-      saveBtn.textContent = updated.saved ? '★ En Bóveda' : '☆ Guardar';
+      saveBtn.textContent = updated.saved ? '★ EN BÓVEDA' : '☆ GUARDAR';
     });
 
     feedEl.appendChild(slide);
