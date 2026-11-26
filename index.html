@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="theme-color" content="#f4f4f2" />
   <title>BENTOSCROLL — Suite Local</title>
+  <link rel="icon" type="image/svg+xml" href="./icon.svg" />
   <link rel="manifest" href="./manifest.json" />
   <link rel="stylesheet" href="./css/style.css" />
 </head>
@@ -15,14 +16,7 @@
       <div class="progress-track" id="progress-track"></div>
       <div class="hud-row">
         <div class="hud-brand">
-          <!-- Logo exacto BENTOKIT -->
-          <svg class="bentokit-logo" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect x="1" y="1" width="38" height="38" fill="#ffffff" stroke="#111111" stroke-width="2"/>
-            <rect x="6" y="6" width="12" height="12" fill="#ffffff" stroke="#111111" stroke-width="2"/>
-            <rect x="22" y="6" width="12" height="12" fill="#111111"/>
-            <rect x="6" y="22" width="12" height="12" fill="#ffffff" stroke="#111111" stroke-width="2"/>
-            <rect x="22" y="22" width="12" height="12" fill="#c0392b"/>
-          </svg>
+          <img src="./icon.svg" alt="BentoScroll" class="bentokit-logo" />
           <div class="brand-text">
             <span class="brand-name"><span class="accent-red">BENTO</span>SCROLL</span>
             <span class="brand-sub" id="stat-seen">0 LEÍDAS · OFFLINE</span>
@@ -39,13 +33,13 @@
     <main id="feed" class="feed-container"></main>
   </section>
 
-  <!-- VISTA 2: MAPA DE NIEBLA (CIUDAD REAL + ZOOM) -->
+  <!-- VISTA 2: MAPA DE NIEBLA -->
   <section id="view-fog" class="view">
     <div class="module-shell">
       <header class="sub-header">
         <div>
           <h1 class="sub-title"><span class="accent-red">BENTO</span> NIEBLA</h1>
-          <p class="sub-desc" id="fog-stats">0 ZONAS DESPEJADAS · GPS LOCAL</p>
+          <p class="sub-desc" id="fog-stats">0 ZONAS · ZOOM 15x</p>
         </div>
         <button id="btn-fog-gps" class="status-badge gps">RED/GPS</button>
       </header>
