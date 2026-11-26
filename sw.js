@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bentoscroll-v4';
+const CACHE_NAME = 'bentoscroll-v5';
 const ASSETS = [
   './',
   './index.html',
@@ -31,6 +31,10 @@ self.addEventListener('activate', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
+  // Dejar pasar peticiones externas (ej. Wikipedia API) directo a la red
+  if (!e.request.url.startsWith(self.location.origin)) {
+    return;
+  }
   e.respondWith(
     caches.match(e.request).then((cached) => cached || fetch(e.request))
   );
