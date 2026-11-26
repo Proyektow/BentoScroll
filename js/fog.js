@@ -12,12 +12,16 @@ const pinPreviewEl = document.getElementById('fog-pin-preview');
 let watchId = null;
 let points = [];
 let captures = [];
-let centerCoords = { lat: 43.2630, lng: -2.9350 }; // Bilbao por defecto hasta activar GPS
+let centerCoords = { lat: 43.2630, lng: -2.9350 };
 let latestCoords = null;
 let zoom = 15;
 let renderedPins = [];
 
 const tileCache = new Map();
+
+// Variables para arrastrar el mapa con el dedo
+let isDragging = false;
+let dragStart = { x: 0, y: 0 };
 
 export async function renderFogMap() {
   const rect = canvas.parentElement.getBoundingClientRect();
@@ -48,6 +52,14 @@ function latLngToTile(lat, lng, z) {
   return { x, y };
 }
 
+function tileToLatLng(x, y, z) {
+  const n = Math.pow(2, z);
+  const lng = (x / n) * 360 - 180;
+  const latRad = Math.atan(Math.sinh(Math.PI * (1 - (2 * y) / n)));
+  const lat = (latRad * 180) / Math.PI;
+  return { lat, lng };
+}
+
 function project(lat, lng) {
   const cTile = latLngToTile(centerCoords.lat, centerCoords.lng, zoom);
   const pTile = latLngToTile(lat, lng, zoom);
@@ -63,8 +75,8 @@ function getTileImage(tx, ty, z) {
 
   const img = new Image();
   img.crossOrigin = 'anonymous';
-  // Mapa minimalista blanco/gris estilo editorial
-  img.src = `https://a.basemaps.cartocdn.com/light_all/${z}/${tx}/${ty}.png`;
+  // OpenStreetMap estándar: 0 API keys, libre y cacheable
+  img.src = `https://tile.openstreetmap.org/${z}/${tx}/${ty}.png`;
   img.onload = () => drawScene();
   tileCache.set(key, img);
   return img;
@@ -77,13 +89,15 @@ function drawScene() {
   ctx.fillStyle = '#f4f4f2';
   ctx.fillRect(0, 0, w, h);
 
-  // 1. Dibujar mapa real de la ciudad (tiles cacheados)
+  // 1. Dibujar mapa de OpenStreetMap en escala de grises estilo BentoKit
   const cTile = latLngToTile(centerCoords.lat, centerCoords.lng, zoom);
   const baseTx = Math.floor(cTile.x);
   const baseTy = Math.floor(cTile.y);
   const offsetX = (cTile.x - baseTx) * 256;
   const offsetY = (cTile.y - baseTy) * 256;
 
+  ctx.save();
+  ctx.filter = 'grayscale(100%) contrast(1.08) brightness(1.03)';
   for (let dx = -2; dx <= 2; dx++) {
     for (let dy = -2; dy <= 2; dy++) {
       const tx = baseTx + dx;
@@ -96,6 +110,7 @@ function drawScene() {
       }
     }
   }
+  ctx.restore();
 
   // 2. Capa de Niebla sobre la ciudad
   const fogLayer = document.createElement('canvas');
@@ -107,11 +122,11 @@ function drawScene() {
   fCtx.fillRect(0, 0, w, h);
 
   fCtx.globalCompositeOperation = 'destination-out';
-  const radius = Math.max(22, (zoom - 11) * 12);
+  const radius = Math.max(24, (zoom - 11) * 14);
 
   points.forEach((pt) => {
     const p = project(pt.lat, pt.lng);
-    const grad = fCtx.createRadialGradient(p.x, p.y, radius * 0.3, p.x, p.y, radius);
+    const grad = fCtx.createRadialGradient(p.x, p.y, radius * 0.35, p.x, p.y, radius);
     grad.addColorStop(0, 'rgba(0,0,0,1)');
     grad.addColorStop(1, 'rgba(0,0,0,0)');
     fCtx.fillStyle = grad;
@@ -170,6 +185,27 @@ async function recordPosition(lat, lng) {
   drawScene();
 }
 
+/* Arrastrar mapa con el dedo */
+canvas.addEventListener('pointerdown', (e) => {
+  isDragging = true;
+  dragStart = { x: e.clientX, y: e.clientY };
+});
+
+canvas.addEventListener('pointermove', (e) => {
+  if (!isDragging) return;
+  const dx = e.clientX - dragStart.x;
+  const dy = e.clientY - dragStart.y;
+  dragStart = { x: e.clientX, y: e.clientY };
+
+  const cTile = latLngToTile(centerCoords.lat, centerCoords.lng, zoom);
+  centerCoords = tileToLatLng(cTile.x - dx / 256, cTile.y - dy / 256, zoom);
+  drawScene();
+});
+
+window.addEventListener('pointerup', () => {
+  isDragging = false;
+});
+
 gpsBtn.addEventListener('click', () => {
   if (watchId !== null) {
     navigator.geolocation.clearWatch(watchId);
@@ -191,7 +227,7 @@ gpsBtn.addEventListener('click', () => {
 });
 
 zoomInBtn.addEventListener('click', () => {
-  if (zoom < 17) {
+  if (zoom < 18) {
     zoom++;
     fogStatsEl.textContent = `${points.length} ZONAS · ZOOM ${zoom}x`;
     drawScene();
@@ -199,7 +235,7 @@ zoomInBtn.addEventListener('click', () => {
 });
 
 zoomOutBtn.addEventListener('click', () => {
-  if (zoom > 12) {
+  if (zoom > 11) {
     zoom--;
     fogStatsEl.textContent = `${points.length} ZONAS · ZOOM ${zoom}x`;
     drawScene();
