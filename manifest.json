@@ -1,0 +1,17 @@
+{
+  "name": "BentoScroll",
+  "short_name": "BentoScroll",
+  "description": "Feed vertical offline de micro-aprendizaje y retos cognitivos.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0a0a0c",
+  "theme_color": "#0a0a0c",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%23131316'/><rect x='20' y='20' width='26' height='26' rx='6' fill='%23f4f4f5'/><rect x='54' y='20' width='26' height='60' rx='6' fill='%233f3f46'/><rect x='20' y='54' width='26' height='26' rx='6' fill='%2371717a'/></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}
