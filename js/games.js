@@ -10,7 +10,6 @@ export function renderGame(container, type) {
   }
 }
 
-/* 1. Matriz de Memoria */
 function renderMemoryGame(container) {
   container.innerHTML = `
     <div class="game-box">
@@ -65,7 +64,6 @@ function renderMemoryGame(container) {
   });
 }
 
-/* 2. Cronómetro Ciego */
 function renderBlindChrono(container) {
   container.innerHTML = `
     <div class="game-box">
@@ -101,7 +99,6 @@ function renderBlindChrono(container) {
   });
 }
 
-/* 3. Byte Builder */
 function renderBinaryGame(container) {
   const weights = [16, 8, 4, 2, 1];
   let targetNum = Math.floor(Math.random() * 30) + 1;
@@ -147,7 +144,6 @@ function renderBinaryGame(container) {
   renderBits();
 }
 
-/* 4. Test de Latencia */
 function renderLatencyGame(container) {
   container.innerHTML = `
     <div class="game-box">
@@ -183,7 +179,6 @@ function renderLatencyGame(container) {
   });
 }
 
-/* 5. NUEVO: Estimador de Ángulos */
 function renderAngleGame(container) {
   let targetDeg = Math.floor(Math.random() * 145) + 20;
   container.innerHTML = `
@@ -197,7 +192,6 @@ function renderAngleGame(container) {
   const cv = container.querySelector('#ang-cv');
   const ctx = cv.getContext('2d');
   const range = container.querySelector('#ang-range');
-  const valSpan = container.querySelector('#ang-val');
   const checkBtn = container.querySelector('#ang-check');
   const status = container.querySelector('#ang-status');
   let solved = false;
@@ -225,7 +219,8 @@ function renderAngleGame(container) {
   drawAngle(targetDeg);
 
   range.addEventListener('input', () => {
-    valSpan.textContent = `${range.value}°`;
+    const valSpan = container.querySelector('#ang-val');
+    if (valSpan) valSpan.textContent = `${range.value}°`;
   });
 
   checkBtn.addEventListener('click', () => {
@@ -245,7 +240,6 @@ function renderAngleGame(container) {
   });
 }
 
-/* 6. NUEVO: Cálculo Mental Express */
 function renderMathGame(container) {
   container.innerHTML = `
     <div class="game-box">
@@ -289,7 +283,6 @@ function renderMathGame(container) {
   nextRound();
 }
 
-/* 7. NUEVO: Pulso Oculto (Metrónomo) */
 function renderRhythmGame(container) {
   container.innerHTML = `
     <div class="game-box">
@@ -318,7 +311,7 @@ function renderRhythmGame(container) {
   pad.addEventListener('click', () => {
     if (phase === 'idle') {
       phase = 'counting';
-      const interval = 600; // 100 BPM
+      const interval = 600;
       let count = 0;
       const runBeat = () => {
         count++;
