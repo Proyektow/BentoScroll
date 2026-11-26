@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0a0a0c" />
+  <title>BentoScroll — Anti-Scroll Offline</title>
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="stylesheet" href="./css/style.css" />
+</head>
+<body>
+  <header class="hud">
+    <div class="hud-brand">
+      <span class="dot"></span>
+      <span>BentoScroll</span>
+    </div>
+    <div class="hud-stats">
+      <span id="stat-seen" title="Píldoras consumidas">0 vistas</span>
+      <button id="btn-saved-filter" class="pill-btn" aria-label="Ver guardados">Guardados (<span id="stat-saved">0</span>)</button>
+    </div>
+  </header>
+
+  <main id="feed" class="feed-container"></main>
+
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>
