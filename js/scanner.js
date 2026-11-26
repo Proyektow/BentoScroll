@@ -1,4 +1,5 @@
 import { saveCapture } from './db.js';
+import { getLatestCoords } from './fog.js';
 
 const video = document.getElementById('cam-video');
 const canvas = document.getElementById('cam-canvas');
@@ -13,13 +14,13 @@ let stream = null;
 let rafId = null;
 let activeFilter = 'normal';
 let facingMode = 'environment';
-let currentPalette = ['#2563eb', '#f97316', '#0f172a', '#64748b', '#e2e8f0'];
+let currentPalette = ['#111111', '#c0392b', '#52525b', '#d4d4d0', '#f4f4f2'];
 let frameCounter = 0;
 
 export async function startScanner() {
   stopScanner();
   overlayMsg.style.display = 'flex';
-  overlayMsg.textContent = 'Activando cámara local...';
+  overlayMsg.textContent = 'ACTIVANDO CÁMARA LOCAL...';
 
   try {
     stream = await navigator.mediaDevices.getUserMedia({
@@ -33,7 +34,7 @@ export async function startScanner() {
     overlayMsg.style.display = 'none';
     renderLoop();
   } catch (err) {
-    overlayMsg.textContent = 'Permite el acceso a la cámara para usar el escáner.';
+    overlayMsg.textContent = 'PERMITE EL ACCESO A LA CÁMARA PARA USAR EL ESCÁNER.';
   }
 }
 
@@ -56,15 +57,10 @@ function renderLoop() {
 
   ctx.drawImage(video, sx, sy, size, size, 0, 0, canvas.width, canvas.height);
 
-  // Extraer paleta cada 15 fotogramas para fluidez
-  if (frameCounter % 15 === 0) {
-    extractPalette();
-  }
+  if (frameCounter % 15 === 0) extractPalette();
   frameCounter++;
 
-  if (activeFilter !== 'normal') {
-    applyMathFilter(activeFilter);
-  }
+  if (activeFilter !== 'normal') applyMathFilter(activeFilter);
 
   rafId = requestAnimationFrame(renderLoop);
 }
@@ -73,7 +69,6 @@ function extractPalette() {
   const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
   const buckets = new Map();
 
-  // Muestreo rápido cada 24 píxeles
   for (let i = 0; i < imgData.length; i += 4 * 24) {
     const r = Math.round(imgData[i] / 32) * 32;
     const g = Math.round(imgData[i + 1] / 32) * 32;
@@ -90,12 +85,7 @@ function extractPalette() {
   if (sorted.length === 5) {
     currentPalette = sorted;
     paletteEl.innerHTML = currentPalette
-      .map(
-        (hex) => `
-        <div class="swatch" style="background:${hex}">
-          <span>${hex}</span>
-        </div>`
-      )
+      .map((hex) => `<div class="swatch" style="background:${hex}"><span>${hex}</span></div>`)
       .join('');
   }
 }
@@ -107,7 +97,6 @@ function applyMathFilter(type) {
   const d = frame.data;
 
   if (type === '1bit') {
-    // Estilo Game Boy / Dithering ordenado
     const bayer = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
     for (let y = 0; y < h; y++) {
       for (let x = 0; x < w; x++) {
@@ -115,39 +104,37 @@ function applyMathFilter(type) {
         const lum = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
         const threshold = (bayer[(y % 4) * 4 + (x % 4)] / 16) * 255;
         const isLight = lum > threshold;
-        d[i] = isLight ? 244 : 15;
-        d[i + 1] = isLight ? 246 : 23;
-        d[i + 2] = isLight ? 249 : 42;
+        d[i] = isLight ? 244 : 17;
+        d[i + 1] = isLight ? 244 : 17;
+        d[i + 2] = isLight ? 242 : 17;
       }
     }
     ctx.putImageData(frame, 0, 0);
   } else if (type === 'thermal') {
-    // Mapa de calor Azul -> Naranja -> Blanco
     for (let i = 0; i < d.length; i += 4) {
       const lum = (0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]) / 255;
       if (lum < 0.45) {
-        d[i] = 15;
-        d[i + 1] = Math.round(lum * 220);
-        d[i + 2] = 235;
+        d[i] = 17;
+        d[i + 1] = Math.round(lum * 160);
+        d[i + 2] = 180;
       } else if (lum < 0.8) {
-        d[i] = 249;
-        d[i + 1] = Math.round((lum - 0.45) * 320);
-        d[i + 2] = 22;
+        d[i] = 192;
+        d[i + 1] = Math.round((lum - 0.45) * 260);
+        d[i + 2] = 43;
       } else {
-        d[i] = 255;
-        d[i + 1] = 250;
-        d[i + 2] = 230;
+        d[i] = 244;
+        d[i + 1] = 244;
+        d[i + 2] = 235;
       }
     }
     ctx.putImageData(frame, 0, 0);
   } else if (type === 'ascii') {
-    // Matriz ASCII en blanco y azul
     const chars = ' .:-=+*#%@';
     const step = 10;
-    ctx.fillStyle = '#0f172a';
+    ctx.fillStyle = '#111111';
     ctx.fillRect(0, 0, w, h);
     ctx.font = 'bold 10px monospace';
-    ctx.fillStyle = '#60a5fa';
+    ctx.fillStyle = '#f4f4f2';
 
     for (let y = 0; y < h; y += step) {
       for (let x = 0; x < w; x += step) {
@@ -177,10 +164,6 @@ flipBtn.addEventListener('click', () => {
   startScanner();
 });
 
-import { getLatestCoords } from './fog.js';
-
-// ... (mantén el resto de scanner.js igual y actualiza el botón de disparo):
-
 shutterBtn.addEventListener('click', async () => {
   if (!stream) return;
   const dataUrl = canvas.toDataURL('image/webp', 0.82);
@@ -195,8 +178,8 @@ shutterBtn.addEventListener('click', async () => {
   await saveCapture(capture);
 
   const prevText = shutterBtn.textContent;
-  shutterBtn.textContent = capture.coords ? '✓ Guardado y clavado en Mapa' : '✓ Guardado en Bóveda';
-  shutterBtn.style.background = 'var(--success)';
+  shutterBtn.textContent = capture.coords ? '✓ GUARDADO EN BÓVEDA Y MAPA' : '✓ GUARDADO EN BÓVEDA';
+  shutterBtn.style.background = 'var(--offline-green)';
   setTimeout(() => {
     shutterBtn.textContent = prevText;
     shutterBtn.style.background = '';
