@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bentoscroll-v1';
+const CACHE_NAME = 'bentoscroll-v2';
 const ASSETS = [
   './',
   './index.html',
