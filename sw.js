@@ -4,15 +4,16 @@ const ASSETS = [
   './',
   './index.html',
   './manifest.json',
+  './icon.svg',
   './css/style.css',
-  './js/app.js',
+  './data/pack.json',
   './js/db.js',
   './js/games.js',
   './js/scanner.js',
-  './js/vault.js',
-  './js/lab.js',
   './js/fog.js',
-  './data/pack.json'
+  './js/lab.js',
+  './js/vault.js',
+  './js/app.js'
 ];
 
 self.addEventListener('install', (e) => {
@@ -36,7 +37,6 @@ self.addEventListener('activate', (e) => {
 self.addEventListener('fetch', (e) => {
   const url = e.request.url;
 
-  // Cachear automáticamente los cuadrantes de OpenStreetMap para uso offline
   if (url.includes('tile.openstreetmap.org')) {
     e.respondWith(
       caches.open(MAP_CACHE).then((cache) =>
