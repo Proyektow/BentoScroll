@@ -17,8 +17,18 @@ let facingMode = 'environment';
 let currentPalette = ['#111111', '#c0392b', '#52525b', '#d4d4d0', '#f4f4f2'];
 let frameCounter = 0;
 
+// Variables para Huella Acústica (4 segundos)
+let isRecordingAudio = false;
+let audioStream = null;
+let audioCtx = null;
+
 export async function startScanner() {
   stopScanner();
+  if (activeFilter === 'audio') {
+    prepareAudioView();
+    return;
+  }
+
   overlayMsg.style.display = 'flex';
   overlayMsg.textContent = 'ACTIVANDO CÁMARA LOCAL...';
 
@@ -32,6 +42,7 @@ export async function startScanner() {
     canvas.width = 480;
     canvas.height = 480;
     overlayMsg.style.display = 'none';
+    shutterBtn.textContent = 'CAPTURAR EN BÓVEDA';
     renderLoop();
   } catch (err) {
     overlayMsg.textContent = 'PERMITE EL ACCESO A LA CÁMARA PARA USAR EL ESCÁNER.';
@@ -44,6 +55,106 @@ export function stopScanner() {
   if (stream) {
     stream.getTracks().forEach((t) => t.stop());
     stream = null;
+  }
+  if (audioStream) {
+    audioStream.getTracks().forEach((t) => t.stop());
+    audioStream = null;
+  }
+  isRecordingAudio = false;
+}
+
+function prepareAudioView() {
+  canvas.width = 480;
+  canvas.height = 480;
+  overlayMsg.style.display = 'none';
+  ctx.fillStyle = '#111111';
+  ctx.fillRect(0, 0, 480, 480);
+  ctx.strokeStyle = '#333338';
+  ctx.lineWidth = 1;
+  for (let y = 40; y < 480; y += 40) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(480, y);
+    ctx.stroke();
+  }
+  ctx.fillStyle = '#f4f4f2';
+  ctx.font = 'bold 16px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('HUELLA ACÚSTICA (4 SEG)', 240, 230);
+  ctx.fillStyle = '#a1a1aa';
+  ctx.font = '13px monospace';
+  ctx.fillText('PULSA ABAJO PARA REGISTRAR EL ENTORNO', 240, 260);
+  shutterBtn.textContent = 'GRABAR HUELLA (4s)';
+  currentPalette = ['#111111', '#c0392b', '#f4f4f2', '#52525b', '#d4d4d0'];
+  paletteEl.innerHTML = currentPalette
+    .map((hex) => `<div class="swatch" style="background:${hex}"><span>${hex}</span></div>`)
+    .join('');
+}
+
+async function recordAudioPostcard() {
+  if (isRecordingAudio) return;
+  try {
+    audioStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const source = audioCtx.createMediaStreamSource(audioStream);
+    const analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 256;
+    source.connect(analyser);
+
+    const bufferLength = analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+
+    isRecordingAudio = true;
+    shutterBtn.textContent = 'ESCUCHANDO ENTORNO...';
+    ctx.fillStyle = '#111111';
+    ctx.fillRect(0, 0, 480, 480);
+
+    const startTime = performance.now();
+    const duration = 4000;
+    let colX = 0;
+
+    function drawAudioColumn() {
+      if (!isRecordingAudio) return;
+      const elapsed = performance.now() - startTime;
+      const progress = Math.min(1, elapsed / duration);
+      const targetX = Math.floor(progress * 480);
+
+      analyser.getByteFrequencyData(dataArray);
+
+      while (colX <= targetX && colX < 480) {
+        for (let i = 0; i < bufferLength; i++) {
+          const val = dataArray[i] / 255;
+          if (val > 0.12) {
+            const y = 480 - (i / bufferLength) * 440 - 20;
+            ctx.fillStyle = val > 0.62 ? '#c0392b' : `rgba(244, 244, 242, ${val})`;
+            ctx.fillRect(colX, y, 2, 4);
+          }
+        }
+        colX += 2;
+      }
+
+      if (elapsed < duration) {
+        rafId = requestAnimationFrame(drawAudioColumn);
+      } else {
+        isRecordingAudio = false;
+        audioStream.getTracks().forEach((t) => t.stop());
+        audioStream = null;
+
+        // Sello minimalista en la postal sonora
+        ctx.fillStyle = '#f4f4f2';
+        ctx.font = 'bold 12px monospace';
+        ctx.textAlign = 'left';
+        const stamp = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+        ctx.fillText(`BENTO AUDIO · ${stamp}`, 16, 26);
+
+        saveCurrentCanvas('audio');
+      }
+    }
+
+    drawAudioColumn();
+  } catch (err) {
+    shutterBtn.textContent = 'PERMITE EL MICRÓFONO';
+    setTimeout(() => (shutterBtn.textContent = 'GRABAR HUELLA (4s)'), 1600);
   }
 }
 
@@ -151,37 +262,53 @@ function rgbToHex(r, g, b) {
   return '#' + [r, g, b].map((v) => v.toString(16).padStart(2, '0')).join('');
 }
 
-filterBtns.forEach((btn) => {
-  btn.addEventListener('click', () => {
-    filterBtns.forEach((b) => b.classList.remove('active'));
-    btn.classList.add('active');
-    activeFilter = btn.dataset.filter;
-  });
-});
-
-flipBtn.addEventListener('click', () => {
-  facingMode = facingMode === 'environment' ? 'user' : 'environment';
-  startScanner();
-});
-
-shutterBtn.addEventListener('click', async () => {
-  if (!stream) return;
-  const dataUrl = canvas.toDataURL('image/webp', 0.82);
+async function saveCurrentCanvas(filterName) {
+  const dataUrl = canvas.toDataURL('image/webp', 0.85);
   const capture = {
     id: 'cap_' + Date.now(),
     image: dataUrl,
     palette: [...currentPalette],
-    filter: activeFilter,
+    filter: filterName,
     coords: getLatestCoords(),
     createdAt: Date.now()
   };
   await saveCapture(capture);
 
-  const prevText = shutterBtn.textContent;
   shutterBtn.textContent = capture.coords ? '✓ GUARDADO EN BÓVEDA Y MAPA' : '✓ GUARDADO EN BÓVEDA';
   shutterBtn.style.background = 'var(--offline-green)';
   setTimeout(() => {
-    shutterBtn.textContent = prevText;
+    shutterBtn.textContent = activeFilter === 'audio' ? 'GRABAR HUELLA (4s)' : 'CAPTURAR EN BÓVEDA';
     shutterBtn.style.background = '';
-  }, 1200);
+  }, 1300);
+}
+
+filterBtns.forEach((btn) => {
+  btn.addEventListener('click', () => {
+    const prev = activeFilter;
+    filterBtns.forEach((b) => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeFilter = btn.dataset.filter;
+
+    if (activeFilter === 'audio') {
+      stopScanner();
+      prepareAudioView();
+    } else if (prev === 'audio') {
+      startScanner();
+    }
+  });
+});
+
+flipBtn.addEventListener('click', () => {
+  if (activeFilter === 'audio') return;
+  facingMode = facingMode === 'environment' ? 'user' : 'environment';
+  startScanner();
+});
+
+shutterBtn.addEventListener('click', async () => {
+  if (activeFilter === 'audio') {
+    recordAudioPostcard();
+    return;
+  }
+  if (!stream) return;
+  await saveCurrentCanvas(activeFilter);
 });
