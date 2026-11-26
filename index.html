@@ -3,20 +3,31 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="theme-color" content="#0a0a0c" />
-  <title>BentoScroll — Anti-Scroll Offline</title>
+  <meta name="theme-color" content="#f4f6f9" />
+  <title>BentoScroll — Tech & IA Offline</title>
   <link rel="manifest" href="./manifest.json" />
   <link rel="stylesheet" href="./css/style.css" />
 </head>
 <body>
   <header class="hud">
-    <div class="hud-brand">
-      <span class="dot"></span>
-      <span>BentoScroll</span>
-    </div>
-    <div class="hud-stats">
-      <span id="stat-seen" title="Píldoras consumidas">0 vistas</span>
-      <button id="btn-saved-filter" class="pill-btn" aria-label="Ver guardados">Guardados (<span id="stat-saved">0</span>)</button>
+    <div class="progress-track" id="progress-track"></div>
+    <div class="hud-row">
+      <div class="hud-brand">
+        <div class="logo-grid">
+          <span class="b-blue"></span>
+          <span class="b-orange"></span>
+          <span class="b-dark"></span>
+          <span class="b-blue"></span>
+        </div>
+        <span>BentoScroll</span>
+      </div>
+      <div class="hud-stats">
+        <span class="badge blue" id="stat-seen">0 leídas</span>
+        <button id="btn-shuffle" class="icon-btn" title="Mezclar tarjetas" aria-label="Mezclar">↻</button>
+        <button id="btn-saved-filter" class="pill-btn" aria-label="Ver guardados">
+          Guardados <span id="stat-saved" class="count-orange">0</span>
+        </button>
+      </div>
     </div>
   </header>
 
