@@ -5,18 +5,19 @@ const ctx = canvas.getContext('2d');
 const fogStatsEl = document.getElementById('fog-stats');
 const gpsBtn = document.getElementById('btn-fog-gps');
 const centerBtn = document.getElementById('btn-fog-center');
-const simBtn = document.getElementById('btn-fog-sim');
+const zoomInBtn = document.getElementById('btn-fog-zoom-in');
+const zoomOutBtn = document.getElementById('btn-fog-zoom-out');
 const pinPreviewEl = document.getElementById('fog-pin-preview');
 
 let watchId = null;
 let points = [];
 let captures = [];
-let origin = null; // { lat, lng } referencia central
+let centerCoords = { lat: 43.2630, lng: -2.9350 }; // Bilbao por defecto hasta activar GPS
 let latestCoords = null;
+let zoom = 15;
 let renderedPins = [];
 
-// Escala: ~111,000 metros por grado
-const SCALE = 140000;
+const tileCache = new Map();
 
 export async function renderFogMap() {
   const rect = canvas.parentElement.getBoundingClientRect();
@@ -26,11 +27,12 @@ export async function renderFogMap() {
   points = await getAllFogPoints();
   captures = await getAllCaptures();
 
-  if (!origin && points.length > 0) {
-    origin = { lat: points[points.length - 1].lat, lng: points[points.length - 1].lng };
+  if (points.length > 0 && !latestCoords) {
+    const last = points[points.length - 1];
+    centerCoords = { lat: last.lat, lng: last.lng };
   }
 
-  fogStatsEl.textContent = `${points.length} zonas despejadas · ${captures.filter((c) => c.coords).length} pins`;
+  fogStatsEl.textContent = `${points.length} ZONAS · ZOOM ${zoom}x`;
   drawScene();
 }
 
@@ -38,102 +40,111 @@ export function getLatestCoords() {
   return latestCoords;
 }
 
+function latLngToTile(lat, lng, z) {
+  const n = Math.pow(2, z);
+  const x = ((lng + 180) / 360) * n;
+  const latRad = (lat * Math.PI) / 180;
+  const y = ((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2) * n;
+  return { x, y };
+}
+
 function project(lat, lng) {
-  if (!origin) return { x: canvas.width / 2, y: canvas.height / 2 };
-  const dx = (lng - origin.lng) * Math.cos((origin.lat * Math.PI) / 180) * SCALE;
-  const dy = (origin.lat - lat) * SCALE;
+  const cTile = latLngToTile(centerCoords.lat, centerCoords.lng, zoom);
+  const pTile = latLngToTile(lat, lng, zoom);
   return {
-    x: canvas.width / 2 + dx,
-    y: canvas.height / 2 + dy
+    x: canvas.width / 2 + (pTile.x - cTile.x) * 256,
+    y: canvas.height / 2 + (pTile.y - cTile.y) * 256
   };
+}
+
+function getTileImage(tx, ty, z) {
+  const key = `${z}/${tx}/${ty}`;
+  if (tileCache.has(key)) return tileCache.get(key);
+
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  // Mapa minimalista blanco/gris estilo editorial
+  img.src = `https://a.basemaps.cartocdn.com/light_all/${z}/${tx}/${ty}.png`;
+  img.onload = () => drawScene();
+  tileCache.set(key, img);
+  return img;
 }
 
 function drawScene() {
   const w = canvas.width;
   const h = canvas.height;
 
-  // 1. Fondo del mundo descubierto (estilo Bento luminoso con retícula)
-  ctx.fillStyle = '#f8fafc';
+  ctx.fillStyle = '#f4f4f2';
   ctx.fillRect(0, 0, w, h);
 
-  ctx.strokeStyle = '#e2e8f0';
-  ctx.lineWidth = 1;
-  const step = 30;
-  for (let x = 0; x < w; x += step) {
-    ctx.beginPath();
-    ctx.moveTo(x, 0);
-    ctx.lineTo(x, h);
-    ctx.stroke();
-  }
-  for (let y = 0; y < h; y += step) {
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(w, y);
-    ctx.stroke();
+  // 1. Dibujar mapa real de la ciudad (tiles cacheados)
+  const cTile = latLngToTile(centerCoords.lat, centerCoords.lng, zoom);
+  const baseTx = Math.floor(cTile.x);
+  const baseTy = Math.floor(cTile.y);
+  const offsetX = (cTile.x - baseTx) * 256;
+  const offsetY = (cTile.y - baseTy) * 256;
+
+  for (let dx = -2; dx <= 2; dx++) {
+    for (let dy = -2; dy <= 2; dy++) {
+      const tx = baseTx + dx;
+      const ty = baseTy + dy;
+      const img = getTileImage(tx, ty, zoom);
+      const drawX = w / 2 - offsetX + dx * 256;
+      const drawY = h / 2 - offsetY + dy * 256;
+      if (img.complete && img.naturalWidth > 0) {
+        ctx.drawImage(img, drawX, drawY, 256, 256);
+      }
+    }
   }
 
-  // Ruta conectada entre puntos explorados
-  if (points.length > 1) {
-    ctx.beginPath();
-    points.forEach((pt, idx) => {
-      const p = project(pt.lat, pt.lng);
-      if (idx === 0) ctx.moveTo(p.x, p.y);
-      else ctx.lineTo(p.x, p.y);
-    });
-    ctx.strokeStyle = 'rgba(37, 99, 235, 0.35)';
-    ctx.lineWidth = 3;
-    ctx.stroke();
-  }
-
-  // 2. Capa de Niebla de Guerra (Fog of War) en lienzo auxiliar
+  // 2. Capa de Niebla sobre la ciudad
   const fogLayer = document.createElement('canvas');
   fogLayer.width = w;
   fogLayer.height = h;
   const fCtx = fogLayer.getContext('2d');
 
-  fCtx.fillStyle = 'rgba(15, 23, 42, 0.88)';
+  fCtx.fillStyle = 'rgba(17, 17, 17, 0.72)';
   fCtx.fillRect(0, 0, w, h);
 
-  // Recortar agujeros en la niebla por cada coordenada visitada
   fCtx.globalCompositeOperation = 'destination-out';
+  const radius = Math.max(22, (zoom - 11) * 12);
+
   points.forEach((pt) => {
     const p = project(pt.lat, pt.lng);
-    const grad = fCtx.createRadialGradient(p.x, p.y, 10, p.x, p.y, 44);
+    const grad = fCtx.createRadialGradient(p.x, p.y, radius * 0.3, p.x, p.y, radius);
     grad.addColorStop(0, 'rgba(0,0,0,1)');
     grad.addColorStop(1, 'rgba(0,0,0,0)');
     fCtx.fillStyle = grad;
     fCtx.beginPath();
-    fCtx.arc(p.x, p.y, 44, 0, Math.PI * 2);
+    fCtx.arc(p.x, p.y, radius, 0, Math.PI * 2);
     fCtx.fill();
   });
 
   ctx.drawImage(fogLayer, 0, 0);
 
-  // 3. Dibujar Pins de Capturas de la Bóveda sobre zonas despejadas
+  // 3. Pins de Capturas de la Bóveda
   renderedPins = [];
   captures.forEach((cap) => {
     if (!cap.coords) return;
     const p = project(cap.coords.lat, cap.coords.lng);
     renderedPins.push({ x: p.x, y: p.y, cap });
 
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, 11, 0, Math.PI * 2);
-    ctx.fillStyle = '#f97316';
-    ctx.fill();
-    ctx.lineWidth = 2.5;
+    ctx.fillStyle = '#c0392b';
+    ctx.fillRect(p.x - 7, p.y - 7, 14, 14);
+    ctx.lineWidth = 2;
     ctx.strokeStyle = '#ffffff';
-    ctx.stroke();
+    ctx.strokeRect(p.x - 7, p.y - 7, 14, 14);
   });
 
-  // 4. Marcador de posición actual (Radar Azul)
+  // 4. Posición actual
   if (points.length > 0) {
     const last = points[points.length - 1];
     const cur = project(last.lat, last.lng);
     ctx.beginPath();
-    ctx.arc(cur.x, cur.y, 7, 0, Math.PI * 2);
-    ctx.fillStyle = '#2563eb';
+    ctx.arc(cur.x, cur.y, 6, 0, Math.PI * 2);
+    ctx.fillStyle = '#111111';
     ctx.fill();
-    ctx.lineWidth = 2.5;
+    ctx.lineWidth = 2;
     ctx.strokeStyle = '#ffffff';
     ctx.stroke();
   }
@@ -141,9 +152,8 @@ function drawScene() {
 
 async function recordPosition(lat, lng) {
   latestCoords = { lat, lng };
-  if (!origin) origin = { lat, lng };
+  centerCoords = { lat, lng };
 
-  // Evitar duplicados si no te has movido al menos ~12 metros
   const last = points[points.length - 1];
   if (last) {
     const distDeg = Math.hypot(lat - last.lat, lng - last.lng);
@@ -156,7 +166,7 @@ async function recordPosition(lat, lng) {
   const pt = { id: 'fog_' + Date.now(), lat, lng, ts: Date.now() };
   await addFogPoint(pt);
   points.push(pt);
-  fogStatsEl.textContent = `${points.length} zonas despejadas · ${captures.filter((c) => c.coords).length} pins`;
+  fogStatsEl.textContent = `${points.length} ZONAS · ZOOM ${zoom}x`;
   drawScene();
 }
 
@@ -164,44 +174,48 @@ gpsBtn.addEventListener('click', () => {
   if (watchId !== null) {
     navigator.geolocation.clearWatch(watchId);
     watchId = null;
-    gpsBtn.textContent = 'Activar GPS';
+    gpsBtn.textContent = 'RED/GPS';
     gpsBtn.classList.remove('active');
     return;
   }
 
   if (!('geolocation' in navigator)) return;
-  gpsBtn.textContent = 'Rastreando...';
+  gpsBtn.textContent = 'GPS ACTIVO';
   gpsBtn.classList.add('active');
 
   watchId = navigator.geolocation.watchPosition(
-    (pos) => {
-      recordPosition(pos.coords.latitude, pos.coords.longitude);
-    },
-    () => {
-      gpsBtn.textContent = 'Sin señal GPS';
-    },
+    (pos) => recordPosition(pos.coords.latitude, pos.coords.longitude),
+    () => (gpsBtn.textContent = 'SIN SEÑAL'),
     { enableHighAccuracy: true, maximumAge: 5000 }
   );
 });
 
-centerBtn.addEventListener('click', () => {
-  if (points.length > 0) {
-    const last = points[points.length - 1];
-    origin = { lat: last.lat, lng: last.lng };
+zoomInBtn.addEventListener('click', () => {
+  if (zoom < 17) {
+    zoom++;
+    fogStatsEl.textContent = `${points.length} ZONAS · ZOOM ${zoom}x`;
     drawScene();
   }
 });
 
-// Botón de simulación para probar en casa o en el metro sin señal GPS
-simBtn.addEventListener('click', () => {
-  const baseLat = latestCoords ? latestCoords.lat : 43.2630;
-  const baseLng = latestCoords ? latestCoords.lng : -2.9350;
-  const newLat = baseLat + (Math.random() - 0.5) * 0.0012;
-  const newLng = baseLng + (Math.random() - 0.5) * 0.0012;
-  recordPosition(newLat, newLng);
+zoomOutBtn.addEventListener('click', () => {
+  if (zoom > 12) {
+    zoom--;
+    fogStatsEl.textContent = `${points.length} ZONAS · ZOOM ${zoom}x`;
+    drawScene();
+  }
 });
 
-// Tocar un pin naranja muestra la foto capturada en ese lugar
+centerBtn.addEventListener('click', () => {
+  if (latestCoords) {
+    centerCoords = { ...latestCoords };
+  } else if (points.length > 0) {
+    const last = points[points.length - 1];
+    centerCoords = { lat: last.lat, lng: last.lng };
+  }
+  drawScene();
+});
+
 canvas.addEventListener('click', (e) => {
   const rect = canvas.getBoundingClientRect();
   const cx = e.clientX - rect.left;
@@ -212,8 +226,8 @@ canvas.addEventListener('click', (e) => {
     pinPreviewEl.innerHTML = `
       <img src="${hit.cap.image}" alt="Pin" />
       <div>
-        <strong>Hallazgo en esta zona</strong>
-        <div class="mini-pal" style="margin-top:4px;border-radius:4px;overflow:hidden">
+        <strong>CAPTURA LOCAL</strong>
+        <div class="mini-pal" style="margin-top:4px">
           ${hit.cap.palette.map((c) => `<span style="background:${c}"></span>`).join('')}
         </div>
       </div>
