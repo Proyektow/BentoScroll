@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bentoscroll-v7';
+const CACHE_NAME = 'bentoscroll-v8';
 const MAP_CACHE = 'bentoscroll-osm-tiles-v1';
 const ASSETS = [
   './',
