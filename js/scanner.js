@@ -177,6 +177,10 @@ flipBtn.addEventListener('click', () => {
   startScanner();
 });
 
+import { getLatestCoords } from './fog.js';
+
+// ... (mantén el resto de scanner.js igual y actualiza el botón de disparo):
+
 shutterBtn.addEventListener('click', async () => {
   if (!stream) return;
   const dataUrl = canvas.toDataURL('image/webp', 0.82);
@@ -185,15 +189,16 @@ shutterBtn.addEventListener('click', async () => {
     image: dataUrl,
     palette: [...currentPalette],
     filter: activeFilter,
+    coords: getLatestCoords(),
     createdAt: Date.now()
   };
   await saveCapture(capture);
 
   const prevText = shutterBtn.textContent;
-  shutterBtn.textContent = '✓ Guardado en Bóveda';
+  shutterBtn.textContent = capture.coords ? '✓ Guardado y clavado en Mapa' : '✓ Guardado en Bóveda';
   shutterBtn.style.background = 'var(--success)';
   setTimeout(() => {
     shutterBtn.textContent = prevText;
     shutterBtn.style.background = '';
-  }, 1100);
+  }, 1200);
 });
