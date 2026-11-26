@@ -1,5 +1,5 @@
-const CACHE_NAME = 'bentoscroll-v6';
-const MAP_CACHE = 'bentoscroll-map-tiles-v1';
+const CACHE_NAME = 'bentoscroll-v7';
+const MAP_CACHE = 'bentoscroll-osm-tiles-v1';
 const ASSETS = [
   './',
   './index.html',
@@ -36,8 +36,8 @@ self.addEventListener('activate', (e) => {
 self.addEventListener('fetch', (e) => {
   const url = e.request.url;
 
-  // Cachear automáticamente los cuadrantes del mapa de la ciudad para verlos offline
-  if (url.includes('basemaps.cartocdn.com')) {
+  // Cachear automáticamente los cuadrantes de OpenStreetMap para uso offline
+  if (url.includes('tile.openstreetmap.org')) {
     e.respondWith(
       caches.open(MAP_CACHE).then((cache) =>
         cache.match(e.request).then((cached) => {
@@ -52,7 +52,6 @@ self.addEventListener('fetch', (e) => {
     return;
   }
 
-  // Dejar pasar Wikipedia API directo a red
   if (!url.startsWith(self.location.origin)) {
     return;
   }
