@@ -1,17 +1,27 @@
 export function renderGame(container, type) {
-  if (type === 'memory') {
-    renderMemoryGame(container);
-  } else {
-    renderBlindChrono(container);
+  switch (type) {
+    case 'memory':
+      renderMemoryGame(container);
+      break;
+    case 'chrono':
+      renderBlindChrono(container);
+      break;
+    case 'binary':
+      renderBinaryGame(container);
+      break;
+    case 'latency':
+      renderLatencyGame(container);
+      break;
   }
 }
 
+/* 1. Matriz de Memoria */
 function renderMemoryGame(container) {
   container.innerHTML = `
     <div class="game-box">
-      <div id="mem-status" style="font-size:0.85rem;color:var(--text-muted)">Memoriza las 5 casillas</div>
+      <div class="game-hint" id="mem-status">Memoriza los 5 bloques azules</div>
       <div class="memory-grid" id="mem-grid"></div>
-      <button class="action-btn primary" id="mem-start" style="width:100%">Iniciar patrón</button>
+      <button class="action-btn orange-btn" id="mem-start" style="width:100%">Iniciar secuencia</button>
     </div>
   `;
 
@@ -25,7 +35,6 @@ function renderMemoryGame(container) {
   for (let i = 0; i < 16; i++) {
     const cell = document.createElement('div');
     cell.className = 'mem-cell';
-    cell.dataset.idx = i;
     cell.addEventListener('click', () => {
       if (locked || found.has(i)) return;
       if (target.has(i)) {
@@ -33,14 +42,14 @@ function renderMemoryGame(container) {
         found.add(i);
         if (found.size === target.size) {
           locked = true;
-          status.textContent = 'Patrón completado';
+          status.textContent = '¡Secuencia completada!';
           startBtn.style.display = 'block';
-          startBtn.textContent = 'Nuevo patrón';
+          startBtn.textContent = 'Subir nivel (Nuevo patrón)';
         }
       } else {
         cell.classList.add('miss');
         locked = true;
-        status.textContent = 'Fallo. Inténtalo de nuevo';
+        status.textContent = 'Bloque incorrecto';
         startBtn.style.display = 'block';
         startBtn.textContent = 'Reintentar';
       }
@@ -56,27 +65,26 @@ function renderMemoryGame(container) {
     const cells = grid.querySelectorAll('.mem-cell');
     cells.forEach((c) => (c.className = 'mem-cell'));
 
-    while (target.size < 5) {
-      target.add(Math.floor(Math.random() * 16));
-    }
+    while (target.size < 5) target.add(Math.floor(Math.random() * 16));
 
-    status.textContent = 'Observa...';
+    status.textContent = 'Observa la matriz...';
     target.forEach((idx) => cells[idx].classList.add('lit'));
 
     setTimeout(() => {
       cells.forEach((c) => c.classList.remove('lit'));
-      status.textContent = 'Toca las 5 casillas';
+      status.textContent = 'Marca las 5 posiciones';
       locked = false;
-    }, 1100);
+    }, 1050);
   });
 }
 
+/* 2. Cronómetro Ciego */
 function renderBlindChrono(container) {
   container.innerHTML = `
     <div class="game-box">
-      <div style="font-size:0.85rem;color:var(--text-muted)">Detén el reloj en <strong>5.00s</strong> (se oculta a los 2s)</div>
+      <div class="game-hint">Clava el reloj en <strong>5.00s</strong> (se oculta a los 2s)</div>
       <div class="chrono-display" id="chrono-val">0.00s</div>
-      <button class="action-btn primary" id="chrono-btn" style="width:100%">Arrancar</button>
+      <button class="action-btn orange-btn" id="chrono-btn" style="width:100%">Arrancar reloj</button>
     </div>
   `;
 
@@ -88,11 +96,7 @@ function renderBlindChrono(container) {
 
   function tick() {
     const elapsed = (performance.now() - startTime) / 1000;
-    if (elapsed < 2.0) {
-      display.textContent = elapsed.toFixed(2) + 's';
-    } else {
-      display.textContent = '?.??s';
-    }
+    display.textContent = elapsed < 2.0 ? elapsed.toFixed(2) + 's' : '?.??s';
     rafId = requestAnimationFrame(tick);
   }
 
@@ -100,7 +104,7 @@ function renderBlindChrono(container) {
     if (!running) {
       running = true;
       startTime = performance.now();
-      btn.textContent = 'Detener en 5.00s';
+      btn.textContent = '¡Detener en 5.00s!';
       rafId = requestAnimationFrame(tick);
     } else {
       running = false;
@@ -109,6 +113,94 @@ function renderBlindChrono(container) {
       const diff = Math.abs(5.0 - finalTime).toFixed(2);
       display.textContent = `${finalTime.toFixed(2)}s`;
       btn.textContent = `Desviación: ${diff}s — Reintentar`;
+    }
+  });
+}
+
+/* 3. Byte Builder (Suma Binaria) */
+function renderBinaryGame(container) {
+  const weights = [16, 8, 4, 2, 1];
+  let targetNum = Math.floor(Math.random() * 30) + 1;
+  let bits = [0, 0, 0, 0, 0];
+
+  container.innerHTML = `
+    <div class="game-box">
+      <div class="game-hint">Activa los bits para sumar: <strong id="bin-target" style="color:var(--blue);font-size:1.1rem">${targetNum}</strong></div>
+      <div class="binary-bits" id="bin-row"></div>
+      <div class="game-hint" id="bin-sum">Suma actual: 0</div>
+    </div>
+  `;
+
+  const row = container.querySelector('#bin-row');
+  const targetEl = container.querySelector('#bin-target');
+  const sumEl = container.querySelector('#bin-sum');
+
+  function renderBits() {
+    row.innerHTML = '';
+    weights.forEach((w, idx) => {
+      const btn = document.createElement('button');
+      btn.className = `bit-btn ${bits[idx] ? 'on' : ''}`;
+      btn.innerHTML = `${bits[idx]}<span>${w}</span>`;
+      btn.addEventListener('click', () => {
+        bits[idx] = bits[idx] ? 0 : 1;
+        const currentSum = bits.reduce((acc, b, i) => acc + b * weights[i], 0);
+        renderBits();
+        if (currentSum === targetNum) {
+          sumEl.innerHTML = `<strong style="color:var(--success)">¡Exacto! ${targetNum} en binario es ${bits.join('')}</strong>`;
+          setTimeout(() => {
+            targetNum = Math.floor(Math.random() * 30) + 1;
+            bits = [0, 0, 0, 0, 0];
+            targetEl.textContent = targetNum;
+            sumEl.textContent = 'Suma actual: 0';
+            renderBits();
+          }, 1400);
+        } else {
+          sumEl.textContent = `Suma actual: ${currentSum}`;
+        }
+      });
+      row.appendChild(btn);
+    });
+  }
+
+  renderBits();
+}
+
+/* 4. Test de Latencia Humana */
+function renderLatencyGame(container) {
+  container.innerHTML = `
+    <div class="game-box">
+      <div class="game-hint">Mide tu latencia visual (un humano promedio ronda 220 ms)</div>
+      <div class="latency-pad" id="lat-pad">Toca aquí para empezar</div>
+    </div>
+  `;
+
+  const pad = container.querySelector('#lat-pad');
+  let state = 'idle'; // idle | wait | go
+  let timer = null;
+  let goTime = 0;
+
+  pad.addEventListener('click', () => {
+    if (state === 'idle') {
+      state = 'wait';
+      pad.className = 'latency-pad wait';
+      pad.textContent = 'Espera al color azul...';
+      const delay = 1200 + Math.random() * 2300;
+      timer = setTimeout(() => {
+        state = 'go';
+        goTime = performance.now();
+        pad.className = 'latency-pad go';
+        pad.textContent = '¡AHORA! TOCA';
+      }, delay);
+    } else if (state === 'wait') {
+      clearTimeout(timer);
+      state = 'idle';
+      pad.className = 'latency-pad';
+      pad.textContent = 'Demasiado pronto — Toca para repetir';
+    } else if (state === 'go') {
+      const ms = Math.round(performance.now() - goTime);
+      state = 'idle';
+      pad.className = 'latency-pad';
+      pad.textContent = `${ms} ms — Toca para repetir`;
     }
   });
 }
