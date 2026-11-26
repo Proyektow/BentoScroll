@@ -1,5 +1,5 @@
 const DB_NAME = 'BentoScrollMacroDB';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 export function openDB() {
   return new Promise((resolve, reject) => {
@@ -11,6 +11,9 @@ export function openDB() {
       }
       if (!db.objectStoreNames.contains('captures')) {
         db.createObjectStore('captures', { keyPath: 'id' });
+      }
+      if (!db.objectStoreNames.contains('fog_points')) {
+        db.createObjectStore('fog_points', { keyPath: 'id' });
       }
     };
     req.onsuccess = () => resolve(req.result);
@@ -48,7 +51,7 @@ export async function getAllStates() {
   });
 }
 
-/* --- Capturas Privadas del Escáner --- */
+/* --- Capturas Privadas --- */
 export async function saveCapture(captureObj) {
   const db = await openDB();
   return new Promise((resolve) => {
@@ -77,5 +80,24 @@ export async function deleteCapture(id) {
     const tx = db.transaction('captures', 'readwrite');
     tx.objectStore('captures').delete(id);
     tx.oncomplete = () => resolve();
+  });
+}
+
+/* --- Puntos de Niebla Despejados --- */
+export async function addFogPoint(pt) {
+  const db = await openDB();
+  return new Promise((resolve) => {
+    const tx = db.transaction('fog_points', 'readwrite');
+    tx.objectStore('fog_points').put(pt);
+    tx.oncomplete = () => resolve(pt);
+  });
+}
+
+export async function getAllFogPoints() {
+  const db = await openDB();
+  return new Promise((resolve) => {
+    const tx = db.transaction('fog_points', 'readonly');
+    const req = tx.objectStore('fog_points').getAll();
+    req.onsuccess = () => resolve(req.result || []);
   });
 }
