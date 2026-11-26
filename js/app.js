@@ -2,6 +2,8 @@ import { getAllStates, updateCardState } from './db.js';
 import { renderGame } from './games.js';
 import { startScanner, stopScanner } from './scanner.js';
 import { renderVault } from './vault.js';
+import { startLab, stopLab } from './lab.js';
+import { renderFogMap } from './fog.js';
 
 const feedEl = document.getElementById('feed');
 const progressTrackEl = document.getElementById('progress-track');
@@ -30,7 +32,7 @@ async function init() {
   renderFeed();
 }
 
-/* Navegación Inferior */
+/* Navegación Inferior (5 Pestañas) */
 navItems.forEach((btn) => {
   btn.addEventListener('click', () => {
     const targetId = btn.dataset.target;
@@ -43,6 +45,16 @@ navItems.forEach((btn) => {
       startScanner();
     } else {
       stopScanner();
+    }
+
+    if (targetId === 'view-lab') {
+      startLab();
+    } else {
+      stopLab();
+    }
+
+    if (targetId === 'view-fog') {
+      renderFogMap();
     }
 
     if (targetId === 'view-vault') {
