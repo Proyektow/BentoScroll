@@ -1,17 +1,19 @@
 import { getAllStates, updateCardState } from './db.js';
 import { renderGame } from './games.js';
+import { startScanner, stopScanner } from './scanner.js';
+import { renderVault } from './vault.js';
 
 const feedEl = document.getElementById('feed');
 const progressTrackEl = document.getElementById('progress-track');
 const statSeenEl = document.getElementById('stat-seen');
-const statSavedEl = document.getElementById('stat-saved');
-const filterBtn = document.getElementById('btn-saved-filter');
 const shuffleBtn = document.getElementById('btn-shuffle');
+
+const navItems = document.querySelectorAll('.nav-item');
+const views = document.querySelectorAll('.view');
 
 let allCards = [];
 let currentList = [];
 let statesMap = new Map();
-let onlySaved = false;
 
 async function init() {
   if ('serviceWorker' in navigator) {
@@ -28,15 +30,33 @@ async function init() {
   renderFeed();
 }
 
+/* Navegación Inferior */
+navItems.forEach((btn) => {
+  btn.addEventListener('click', () => {
+    const targetId = btn.dataset.target;
+    navItems.forEach((n) => n.classList.remove('active'));
+    btn.classList.add('active');
+
+    views.forEach((v) => v.classList.toggle('active', v.id === targetId));
+
+    if (targetId === 'view-scanner') {
+      startScanner();
+    } else {
+      stopScanner();
+    }
+
+    if (targetId === 'view-vault') {
+      renderVault(allCards);
+    }
+  });
+});
+
 function updateHud() {
   let seen = 0;
-  let saved = 0;
   statesMap.forEach((s) => {
     if (s.seen) seen++;
-    if (s.saved) saved++;
   });
   statSeenEl.textContent = `${seen} leídas`;
-  statSavedEl.textContent = saved;
 }
 
 function renderProgressSegments(count, activeIdx = 0) {
@@ -52,9 +72,7 @@ function renderProgressSegments(count, activeIdx = 0) {
 
 function renderFeed(shuffle = false) {
   feedEl.innerHTML = '';
-  let list = onlySaved
-    ? allCards.filter((c) => statesMap.get(c.id)?.saved)
-    : [...allCards];
+  let list = [...allCards];
 
   if (shuffle && list.length > 1) {
     for (let i = list.length - 1; i > 0; i--) {
@@ -65,16 +83,6 @@ function renderFeed(shuffle = false) {
 
   currentList = list;
   renderProgressSegments(list.length, 0);
-
-  if (list.length === 0) {
-    feedEl.innerHTML = `
-      <section class="slide">
-        <div class="bento-card" style="justify-content:center;align-items:center;text-align:center">
-          <p class="bento-text">No tienes tarjetas guardadas todavía.<br>Pulsa <strong>Guardar</strong> en cualquier píldora para archivarla aquí.</p>
-        </div>
-      </section>`;
-    return;
-  }
 
   list.forEach((card, index) => {
     const st = statesMap.get(card.id) || { seen: false, saved: false };
@@ -100,7 +108,7 @@ function renderFeed(shuffle = false) {
         <div class="bento-footer">
           ${card.deep ? `<button class="action-btn blue-btn btn-deep">Dato técnico</button>` : ''}
           <button class="action-btn btn-save ${st.saved ? 'saved-state' : ''}">
-            ${st.saved ? '★ Guardado' : '☆ Guardar'}
+            ${st.saved ? '★ En Bóveda' : '☆ Guardar'}
           </button>
         </div>
       </article>
@@ -145,8 +153,7 @@ function renderFeed(shuffle = false) {
       const updated = await updateCardState(card.id, { saved: !current });
       statesMap.set(card.id, updated);
       saveBtn.classList.toggle('saved-state', updated.saved);
-      saveBtn.textContent = updated.saved ? '★ Guardado' : '☆ Guardar';
-      updateHud();
+      saveBtn.textContent = updated.saved ? '★ En Bóveda' : '☆ Guardar';
     });
 
     feedEl.appendChild(slide);
@@ -177,12 +184,6 @@ function observeSlides() {
 
   document.querySelectorAll('.slide').forEach((s) => observer.observe(s));
 }
-
-filterBtn.addEventListener('click', () => {
-  onlySaved = !onlySaved;
-  filterBtn.classList.toggle('active', onlySaved);
-  renderFeed(false);
-});
 
 shuffleBtn.addEventListener('click', () => {
   feedEl.scrollTo({ top: 0, behavior: 'smooth' });
