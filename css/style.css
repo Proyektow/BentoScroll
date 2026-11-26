@@ -721,3 +721,90 @@ button {
 .nav-item.center-action.active {
   background: var(--red);
 }
+/* --- MODO OSCURO DE TINTA (E-INK NOCTURNO) --- */
+body.dark-eink {
+  --bg: #111111;
+  --surface: #18181b;
+  --surface-soft: #222226;
+  --ink: #f4f4f2;
+  --ink-muted: #a1a1aa;
+  --border: #f4f4f2;
+  --border-light: #333338;
+  --red: #e05246;
+  --red-soft: #2c1616;
+  --offline-green: #4ade80;
+  --offline-border: #1e462f;
+  --gps-amber: #fbbf24;
+  --gps-border: #5c4014;
+}
+
+body.dark-eink .bentokit-logo {
+  filter: invert(1) hue-rotate(180deg);
+}
+
+/* --- BLOQUEO POR PIN EN BÓVEDA --- */
+.lock-screen {
+  max-width: 520px;
+  margin: 0 auto;
+  min-height: calc(100dvh - 72px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.lock-screen.hidden, .vault-shell.hidden {
+  display: none;
+}
+
+.lock-card {
+  width: 100%;
+  background: var(--surface);
+  border: 1.5px solid var(--ink);
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  text-align: center;
+}
+
+.pin-dots {
+  display: flex;
+  gap: 12px;
+  margin: 6px 0;
+}
+
+.pin-dots span {
+  width: 14px;
+  height: 14px;
+  border: 1.5px solid var(--ink);
+  background: var(--surface);
+}
+
+.pin-dots span.filled {
+  background: var(--red);
+  border-color: var(--red);
+}
+
+.pin-keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  width: 100%;
+  max-width: 240px;
+}
+
+.pin-keypad button {
+  height: 50px;
+  background: var(--surface-soft);
+  border: 1.5px solid var(--ink);
+  color: var(--ink);
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.pin-keypad button:active {
+  background: var(--ink);
+  color: var(--surface);
+}
