@@ -1,4 +1,4 @@
-const DB_NAME = 'BentoScrollDB';
+const DB_NAME = 'BentoScrollDB_v2';
 const DB_VERSION = 1;
 
 export function openDB() {
