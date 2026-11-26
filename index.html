@@ -23,6 +23,7 @@
           </div>
         </div>
         <div class="hud-actions">
+          <button id="btn-theme" class="hud-box-btn" title="Modo Oscuro E-Ink" aria-label="Cambiar tema">☾</button>
           <button id="btn-sync" class="hud-box-btn" title="Descargar nuevas píldoras con red">
             <span id="sync-label">RED +</span>
           </button>
@@ -59,7 +60,7 @@
     </div>
   </section>
 
-  <!-- VISTA 3: ESCÁNER SENSORIAL -->
+  <!-- VISTA 3: ESCÁNER SENSORIAL (ÓPTICA + HUELLA ACÚSTICA) -->
   <section id="view-scanner" class="view">
     <div class="scanner-shell">
       <header class="sub-header">
@@ -83,6 +84,7 @@
         <button class="f-pill" data-filter="1bit">1-BIT</button>
         <button class="f-pill" data-filter="thermal">TÉRMICO</button>
         <button class="f-pill" data-filter="ascii">ASCII</button>
+        <button class="f-pill" data-filter="audio">AUDIO</button>
       </div>
 
       <button id="btn-shutter" class="shutter-btn">CAPTURAR EN BÓVEDA</button>
@@ -114,17 +116,38 @@
     </div>
   </section>
 
-  <!-- VISTA 5: BÓVEDA PRIVADA -->
+  <!-- VISTA 5: BÓVEDA PRIVADA CON PIN -->
   <section id="view-vault" class="view">
-    <div class="vault-shell">
+    <!-- Pantalla de bloqueo por PIN -->
+    <div id="vault-lock-screen" class="lock-screen hidden">
+      <div class="lock-card">
+        <span class="tag">ACCESO PROTEGIDO</span>
+        <h2 class="bento-title" id="lock-title">BÓVEDA BLOQUEADA</h2>
+        <p class="bento-text" id="lock-msg">Introduce tu PIN de 4 dígitos</p>
+        <div class="pin-dots" id="pin-dots">
+          <span></span><span></span><span></span><span></span>
+        </div>
+        <div class="pin-keypad" id="pin-keypad">
+          <button data-k="1">1</button><button data-k="2">2</button><button data-k="3">3</button>
+          <button data-k="4">4</button><button data-k="5">5</button><button data-k="6">6</button>
+          <button data-k="7">7</button><button data-k="8">8</button><button data-k="9">9</button>
+          <button data-k="C">C</button><button data-k="0">0</button><button data-k="⌫">⌫</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="vault-content" class="vault-shell">
       <header class="sub-header">
         <div>
           <h1 class="sub-title"><span class="accent-red">BENTO</span> BÓVEDA</h1>
           <p class="sub-desc" id="vault-summary">0 CAPTURAS · 0 PÍLDORAS</p>
         </div>
-        <div class="segmented-tabs">
-          <button class="v-tab active" data-vtab="captures">CAPTURAS</button>
-          <button class="v-tab" data-vtab="sparks">PÍLDORAS</button>
+        <div style="display:flex;gap:6px;align-items:center">
+          <button id="btn-vault-pin" class="hud-box-btn" title="Configurar PIN">PIN</button>
+          <div class="segmented-tabs">
+            <button class="v-tab active" data-vtab="captures">CAPTURAS</button>
+            <button class="v-tab" data-vtab="sparks">PÍLDORAS</button>
+          </div>
         </div>
       </header>
       <div id="vault-grid" class="vault-grid"></div>
