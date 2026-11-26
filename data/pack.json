@@ -106,5 +106,26 @@
     "text": "Mediante un proceso llamado ICE/STUN, dos navegadores descubren sus direcciones IP y abren un túnel cifrado directo punto a punto (P2P).",
     "highlight": "Una vez establecido el enlace, los archivos o el audio viajan directo entre tus dispositivos.",
     "deep": "Es la base de herramientas locales tipo Snapdrop y permite latencias mínimas en red local sin gastar ancho de banda en la nube."
+  },
+  {
+    "id": "g5",
+    "type": "game",
+    "category": "Reto · Geometría",
+    "title": "Estimador de Ángulos",
+    "gameType": "angle"
+  },
+  {
+    "id": "g6",
+    "type": "game",
+    "category": "Reto · Cálculo",
+    "title": "Aritmética Express",
+    "gameType": "math"
+  },
+  {
+    "id": "g7",
+    "type": "game",
+    "category": "Reto · Ritmo",
+    "title": "Pulso Oculto (100 BPM)",
+    "gameType": "rhythm"
   }
 ]
