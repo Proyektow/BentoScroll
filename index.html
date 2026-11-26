@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="theme-color" content="#f4f6f9" />
-  <title>BentoScroll — Macro-App Local</title>
+  <meta name="theme-color" content="#f1f5f9" />
+  <title>BentoScroll — Tech & IA</title>
   <link rel="manifest" href="./manifest.json" />
   <link rel="stylesheet" href="./css/style.css" />
 </head>
@@ -15,24 +15,33 @@
       <div class="progress-track" id="progress-track"></div>
       <div class="hud-row">
         <div class="hud-brand">
-          <div class="logo-grid">
-            <span class="b-blue"></span>
-            <span class="b-orange"></span>
-            <span class="b-dark"></span>
-            <span class="b-blue"></span>
+          <!-- Logo SVG BentoKit -->
+          <svg class="bentokit-logo" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="36" height="36" rx="10" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5"/>
+            <rect x="6" y="6" width="11" height="11" rx="3.5" fill="#2563eb"/>
+            <rect x="19" y="6" width="11" height="24" rx="3.5" fill="#f97316"/>
+            <rect x="6" y="19" width="11" height="11" rx="3.5" fill="#0f172a"/>
+          </svg>
+          <div class="brand-text">
+            <span class="brand-name">BentoScroll</span>
+            <span class="brand-sub" id="stat-seen">0 leídas</span>
           </div>
-          <span>BentoScroll</span>
         </div>
-        <div class="hud-stats">
-          <span class="badge blue" id="stat-seen">0 leídas</span>
-          <button id="btn-shuffle" class="icon-btn" title="Mezclar">↻</button>
+        <div class="hud-actions">
+          <button id="btn-sync" class="hud-pill-btn orange" title="Descargar más píldoras con conexión">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            <span id="sync-label">Recargar</span>
+          </button>
+          <button id="btn-shuffle" class="hud-icon-btn" title="Mezclar tarjetas" aria-label="Mezclar">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>
+          </button>
         </div>
       </div>
     </header>
     <main id="feed" class="feed-container"></main>
   </section>
 
-  <!-- VISTA 2: MAPA DE NIEBLA (FASE 4) -->
+  <!-- VISTA 2: MAPA DE NIEBLA -->
   <section id="view-fog" class="view">
     <div class="module-shell">
       <header class="sub-header">
@@ -40,7 +49,7 @@
           <h1 class="sub-title">Mapa de Niebla</h1>
           <p class="sub-desc" id="fog-stats">0 zonas despejadas · GPS Local</p>
         </div>
-        <button id="btn-fog-gps" class="pill-btn">Activar GPS</button>
+        <button id="btn-fog-gps" class="pill-btn blue">Activar GPS</button>
       </header>
 
       <div class="canvas-bento-box">
@@ -50,20 +59,20 @@
 
       <div class="bento-footer">
         <button id="btn-fog-center" class="action-btn blue-btn">Centrar radar</button>
-        <button id="btn-fog-sim" class="action-btn orange-btn">Simular paso (Prueba)</button>
+        <button id="btn-fog-sim" class="action-btn orange-btn">Simular paso</button>
       </div>
     </div>
   </section>
 
-  <!-- VISTA 3: ESCÁNER SENSORIAL (FASE 2) -->
+  <!-- VISTA 3: ESCÁNER SENSORIAL -->
   <section id="view-scanner" class="view">
     <div class="scanner-shell">
       <header class="sub-header">
         <div>
           <h1 class="sub-title">Escáner Sensorial</h1>
-          <p class="sub-desc">100% privado · Vinculado a tu Mapa</p>
+          <p class="sub-desc">Solo se guarda en tu Bóveda privada</p>
         </div>
-        <button id="btn-flip-cam" class="pill-btn">Girar cámara</button>
+        <button id="btn-flip-cam" class="pill-btn">Girar</button>
       </header>
 
       <div class="viewfinder-box">
@@ -85,15 +94,15 @@
     </div>
   </section>
 
-  <!-- VISTA 4: LAB FÍSICA TÁCTIL (FASE 3) -->
+  <!-- VISTA 4: LAB FÍSICA TÁCTIL -->
   <section id="view-lab" class="view">
     <div class="module-shell">
       <header class="sub-header">
         <div>
           <h1 class="sub-title">Lab Táctil</h1>
-          <p class="sub-desc">Toca o desliza · Física y sonido generativo</p>
+          <p class="sub-desc">Física interactiva y sonido generativo</p>
         </div>
-        <div class="vault-tabs">
+        <div class="segmented-tabs">
           <button class="l-tab active" data-ltab="particles">Fluidos</button>
           <button class="l-tab" data-ltab="sound">Ondas</button>
         </div>
@@ -105,7 +114,7 @@
 
       <div class="bento-footer">
         <button id="btn-lab-mode" class="action-btn blue-btn">Polaridad: Atracción</button>
-        <button id="btn-lab-clear" class="action-btn">Reiniciar lienzo</button>
+        <button id="btn-lab-clear" class="action-btn">Reiniciar</button>
       </div>
     </div>
   </section>
@@ -118,7 +127,7 @@
           <h1 class="sub-title">Bóveda Local</h1>
           <p class="sub-desc" id="vault-summary">0 capturas · 0 píldoras</p>
         </div>
-        <div class="vault-tabs">
+        <div class="segmented-tabs">
           <button class="v-tab active" data-vtab="captures">Capturas</button>
           <button class="v-tab" data-vtab="sparks">Píldoras</button>
         </div>
@@ -135,31 +144,31 @@
       <div class="modal-meta" id="modal-meta"></div>
       <div class="bento-footer">
         <button id="modal-delete" class="action-btn danger-btn">Borrar</button>
-        <button id="modal-share" class="action-btn blue-btn">Compartir / Exportar</button>
+        <button id="modal-share" class="action-btn blue-btn">Compartir</button>
         <button id="modal-close" class="action-btn orange-btn">Cerrar</button>
       </div>
     </div>
   </div>
 
-  <!-- BARRA DE NAVEGACIÓN INFERIOR -->
+  <!-- BARRA DE NAVEGACIÓN INFERIOR CON ICONOS SVG -->
   <nav class="bottom-nav">
     <button class="nav-item active" data-target="view-feed">
-      <span class="nav-icon">⊞</span>
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="11" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="18" width="7" height="3" rx="1"/></svg>
       <span>Feed</span>
     </button>
     <button class="nav-item" data-target="view-fog">
-      <span class="nav-icon">◈</span>
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
       <span>Niebla</span>
     </button>
     <button class="nav-item center-action" data-target="view-scanner" aria-label="Escáner">
-      <span class="nav-icon">◉</span>
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
     </button>
     <button class="nav-item" data-target="view-lab">
-      <span class="nav-icon">∿</span>
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"/></svg>
       <span>Lab</span>
     </button>
     <button class="nav-item" data-target="view-vault">
-      <span class="nav-icon">▤</span>
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
       <span>Bóveda</span>
     </button>
   </nav>
